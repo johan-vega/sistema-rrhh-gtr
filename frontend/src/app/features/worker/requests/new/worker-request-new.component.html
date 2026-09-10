@@ -1,0 +1,139 @@
+<div class="page-container">
+  <div class="page-header-back">
+    <a routerLink="/worker/requests" class="back-btn">← Volver</a>
+    <h1 class="page-title">Nueva Solicitud</h1>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">
+      <span class="alert-icon">❌</span>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+    <!-- Tipo de solicitud -->
+    <div class="form-group">
+      <label class="form-label" for="category">
+        Tipo de solicitud <span class="required">*</span>
+      </label>
+      <select id="category" class="form-select" formControlName="category_id"
+        [class.is-invalid]="categoryCtrl.invalid && categoryCtrl.touched">
+        <option value="">— Selecciona una categoría —</option>
+        @for (cat of categories(); track cat.id) {
+          <option [value]="cat.id">{{ cat.name }}</option>
+        }
+      </select>
+      @if (categoryCtrl.invalid && categoryCtrl.touched) {
+        <span class="form-error">⚠️ Selecciona un tipo de solicitud.</span>
+      }
+    </div>
+
+    <!-- Info de la categoría seleccionada -->
+    @if (selectedCategory(); as cat) {
+      <div class="category-info alert alert-info">
+        <span class="alert-icon">ℹ️</span>
+        <div>
+          @if (cat.minimum_advance_days > 0) {
+            <p><strong>Anticipación requerida:</strong> {{ cat.minimum_advance_days }} día(s)</p>
+          }
+          @if (cat.requires_document) {
+            <p><strong>Documento:</strong> Obligatorio</p>
+          } @else {
+            <p><strong>Documento:</strong> Opcional</p>
+          }
+          @if (cat.description) { <p>{{ cat.description }}</p> }
+        </div>
+      </div>
+    }
+
+    <!-- Advertencia de anticipación -->
+    @if (dateWarning()) {
+      <div class="alert alert-warning">
+        <span>{{ dateWarning() }}</span>
+      </div>
+    }
+
+    <!-- Fechas -->
+    <div class="dates-row">
+      <div class="form-group">
+        <label class="form-label" for="start_date">
+          Fecha inicial <span class="required">*</span>
+        </label>
+        <input id="start_date" type="date" class="form-control" formControlName="start_date"
+          [min]="today" [class.is-invalid]="startCtrl.invalid && startCtrl.touched" />
+        @if (startCtrl.invalid && startCtrl.touched) {
+          <span class="form-error">⚠️ Fecha requerida.</span>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="end_date">
+          Fecha final <span class="required">*</span>
+        </label>
+        <input id="end_date" type="date" class="form-control" formControlName="end_date"
+          [min]="form.get('start_date')?.value || today" [class.is-invalid]="endCtrl.invalid && endCtrl.touched" />
+        @if (endCtrl.invalid && endCtrl.touched) {
+          <span class="form-error">⚠️ Fecha requerida.</span>
+        }
+      </div>
+    </div>
+
+    <!-- Motivo -->
+    <div class="form-group">
+      <label class="form-label" for="reason">
+        Motivo <span class="required">*</span>
+      </label>
+      <textarea id="reason" class="form-control" formControlName="reason"
+        placeholder="Describe el motivo de tu solicitud..."
+        rows="4" [class.is-invalid]="reasonCtrl.invalid && reasonCtrl.touched"></textarea>
+      @if (reasonCtrl.hasError('required') && reasonCtrl.touched) {
+        <span class="form-error">⚠️ El motivo es obligatorio.</span>
+      }
+      @if (reasonCtrl.hasError('minlength') && reasonCtrl.touched) {
+        <span class="form-error">⚠️ El motivo debe tener al menos 5 caracteres.</span>
+      }
+    </div>
+
+    <!-- Documento -->
+    <div class="form-group">
+      <label class="form-label">
+        Documento de sustento
+        @if (selectedCategory()?.requires_document) {
+          <span class="required">*</span>
+        } @else {
+          <span class="form-hint" style="margin-left:0.25rem">(opcional)</span>
+        }
+      </label>
+
+      @if (!selectedFile()) {
+        <label class="file-upload-zone" for="doc-upload">
+          <div class="upload-icon">📎</div>
+          <p class="upload-text">Selecciona un archivo</p>
+          <p class="upload-hint">PDF, JPG o PNG — Máx. 5 MB</p>
+          <input id="doc-upload" type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileChange($event)" />
+        </label>
+      } @else {
+        <div class="file-preview">
+          <span class="file-icon">📄</span>
+          <div class="file-info">
+            <p class="file-name">{{ selectedFile()!.name }}</p>
+            <p class="file-size">{{ formatFileSize(selectedFile()!.size) }}</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="removeFile()">✕ Quitar</button>
+        </div>
+      }
+    </div>
+
+    <!-- Submit -->
+    <button id="btn-enviar-solicitud" type="submit" class="btn btn-primary btn-full btn-lg" [disabled]="loading()">
+      @if (loading()) {
+        <span class="spinner"></span>
+        Enviando solicitud...
+      } @else {
+        Enviar solicitud
+      }
+    </button>
+
+  </form>
+</div>

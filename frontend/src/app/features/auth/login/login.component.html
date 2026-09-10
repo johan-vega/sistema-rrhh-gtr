@@ -1,0 +1,110 @@
+<main class="login-page">
+  <div class="login-bg">
+    <div class="login-blob blob-1"></div>
+    <div class="login-blob blob-2"></div>
+  </div>
+
+  <div class="login-card">
+    <!-- Logo / Header -->
+    <div class="login-header">
+      <div class="login-logo">
+        <span class="logo-icon">🏢</span>
+      </div>
+      <h1 class="login-title">SISTEMA RRHH</h1>
+      <p class="login-subtitle">Gestión de solicitudes del personal</p>
+    </div>
+
+    <!-- Alerta sesión expirada -->
+    @if (sessionExpired()) {
+      <div class="alert alert-warning" role="alert">
+        <span class="alert-icon">⚠️</span>
+        <span>Tu sesión ha expirado. Vuelve a iniciar sesión.</span>
+      </div>
+    }
+
+    <!-- Error -->
+    @if (error()) {
+      <div class="alert alert-error" role="alert">
+        <span class="alert-icon">❌</span>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    <!-- Formulario -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+      <div class="form-group">
+        <label class="form-label" for="email">
+          Usuario / Correo electrónico
+        </label>
+        <input
+          id="email"
+          type="text"
+          class="form-control"
+          [class.is-invalid]="emailCtrl.invalid && emailCtrl.touched"
+          formControlName="email"
+          placeholder="Ingresa tu usuario o correo"
+          autocomplete="username"
+          autofocus
+        />
+        @if (emailCtrl.hasError('required') && emailCtrl.touched) {
+          <span class="form-error">⚠️ Este campo es obligatorio.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Contraseña</label>
+        <div class="password-wrapper">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            class="form-control"
+            [class.is-invalid]="passCtrl.invalid && passCtrl.touched"
+            formControlName="password"
+            placeholder="Ingresa tu contraseña"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            {{ showPassword() ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        @if (passCtrl.hasError('required') && passCtrl.touched) {
+          <span class="form-error">⚠️ La contraseña es obligatoria.</span>
+        }
+      </div>
+
+      <button
+        id="btn-login"
+        type="submit"
+        class="btn btn-primary btn-full btn-lg"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          <span class="spinner"></span>
+          Ingresando...
+        } @else {
+          Iniciar sesión
+        }
+      </button>
+
+    </form>
+
+    <div class="login-footer">
+      <a href="mailto:rrhh@empresa.com" class="forgot-link">
+        ¿Olvidaste tu contraseña? Contacta a RRHH
+      </a>
+    </div>
+
+    <!-- Info modo demo -->
+    <div class="demo-info">
+      <p class="demo-title">🔧 Modo desarrollo</p>
+      <p>Trabajador: <strong>cualquier email</strong> + contraseña ≥ 3 chars</p>
+      <p>RRHH: email con <strong>"rrhh"</strong> + contraseña ≥ 3 chars</p>
+    </div>
+  </div>
+</main>

@@ -1,0 +1,92 @@
+<div class="worker-shell">
+
+  <!-- TOP BAR (mobile) -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand">
+        <span class="brand-icon">🏢</span>
+        <span class="brand-name">SISTEMA RRHH</span>
+      </div>
+      <div class="topbar-actions">
+        <a routerLink="/worker/notifications" class="topbar-btn" aria-label="Notificaciones">
+          🔔
+        </a>
+        <button class="topbar-btn" (click)="logout()" aria-label="Cerrar sesión" title="Cerrar sesión">
+          🚪
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR (desktop) -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="brand-icon">🏢</span>
+      <span class="brand-name">SISTEMA RRHH</span>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">{{ auth.currentUser()?.name?.charAt(0) }}</div>
+      <div class="user-info">
+        <p class="user-name">{{ auth.currentUser()?.full_name }}</p>
+        <p class="user-role">Trabajador</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/worker/dashboard" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">🏠</span>
+        <span>Inicio</span>
+      </a>
+      <a routerLink="/worker/requests" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">📋</span>
+        <span>Mis Solicitudes</span>
+      </a>
+      <a routerLink="/worker/calendar" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">📅</span>
+        <span>Calendario</span>
+      </a>
+      <a routerLink="/worker/profile" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">👤</span>
+        <span>Mi Perfil</span>
+      </a>
+      <a routerLink="/worker/notifications" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">🔔</span>
+        <span>Notificaciones</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="nav-item logout-btn" (click)="logout()">
+        <span class="nav-icon">🚪</span>
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <a routerLink="/worker/dashboard" routerLinkActive="active" class="bottom-nav-item">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Inicio</span>
+    </a>
+    <a routerLink="/worker/requests" routerLinkActive="active" class="bottom-nav-item">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Solicitudes</span>
+    </a>
+    <a routerLink="/worker/calendar" routerLinkActive="active" class="bottom-nav-item">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">Calendario</span>
+    </a>
+    <a routerLink="/worker/profile" routerLinkActive="active" class="bottom-nav-item">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">Perfil</span>
+    </a>
+  </nav>
+
+</div>

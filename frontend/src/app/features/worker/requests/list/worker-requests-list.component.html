@@ -1,0 +1,58 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title">Mis Solicitudes</h1>
+    <a id="btn-nueva-solicitud-list" routerLink="/worker/requests/new" class="btn btn-primary">
+      + Nueva
+    </a>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filter-tabs">
+    @for (f of filters; track f.value) {
+      <button
+        class="filter-tab"
+        [class.active]="filter() === f.value"
+        (click)="setFilter(f.value)"
+        type="button"
+      >
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else if (filtered.length === 0) {
+    <app-empty-state
+      icon="📋"
+      title="No hay solicitudes"
+      subtitle="No tienes solicitudes en esta categoría."
+    >
+      <a routerLink="/worker/requests/new" class="btn btn-primary" style="margin-top:1rem">
+        + Crear solicitud
+      </a>
+    </app-empty-state>
+  } @else {
+    <div class="list-container">
+      @for (req of filtered; track req.id) {
+        <a [routerLink]="['/worker/requests', req.id]" class="card card-link">
+          <div class="card-body">
+            <div class="req-top">
+              <span class="req-type">{{ req.category.name }}</span>
+              <app-status-badge [status]="req.status" />
+            </div>
+            <p class="req-dates">
+              📅
+              @if (req.start_date === req.end_date) {
+                {{ formatDate(req.start_date) }}
+              } @else {
+                {{ formatDate(req.start_date) }} → {{ formatDate(req.end_date) }}
+              }
+            </p>
+            <p class="req-solicitud">Solicitado: {{ formatDate(req.request_date) }}</p>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

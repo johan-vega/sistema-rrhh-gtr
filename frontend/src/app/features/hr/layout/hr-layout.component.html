@@ -1,0 +1,64 @@
+<div class="hr-shell">
+
+  <!-- Overlay móvil -->
+  @if (menuOpen) {
+    <div class="menu-overlay" (click)="closeMenu()"></div>
+  }
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" [class.open]="menuOpen">
+    <div class="sidebar-header">
+      <div class="brand">
+        <span>🏢</span>
+        <span class="brand-name">SISTEMA RRHH</span>
+      </div>
+      <button class="close-btn" (click)="closeMenu()" aria-label="Cerrar menú">✕</button>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">{{ auth.currentUser()?.name?.charAt(0) }}</div>
+      <div class="user-info">
+        <p class="user-name">{{ auth.currentUser()?.full_name }}</p>
+        <p class="user-role">Recursos Humanos</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (item of navItems; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          class="nav-item"
+          (click)="closeMenu()"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="nav-item logout-btn" (click)="logout()">
+        <span class="nav-icon">🚪</span>
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="hamburger" (click)="toggleMenu()" aria-label="Abrir menú">
+        ☰
+      </button>
+      <span class="topbar-title">SISTEMA RRHH</span>
+      <a routerLink="/hr/notifications" class="topbar-btn">🔔</a>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+
+</div>

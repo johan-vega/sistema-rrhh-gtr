@@ -1,0 +1,119 @@
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.cal-month {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+
+.cal-day-header {
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.cal-cell {
+  min-height: 60px;
+  padding: 0.375rem 0.25rem;
+  border-right: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+
+  &:nth-child(7n) { border-right: none; }
+
+  &.empty { background: var(--color-surface-2); }
+
+  &.today { background: rgba(46, 134, 222, 0.04); }
+
+  @media (min-width: 480px) {
+    min-height: 80px;
+    padding: 0.5rem;
+  }
+}
+
+.day-number {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  display: block;
+  margin-bottom: 2px;
+
+  &.today-num {
+    background: var(--color-accent);
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+  }
+}
+
+.cal-event {
+  border-radius: 3px;
+  padding: 1px 4px;
+  overflow: hidden;
+
+  .event-label {
+    font-size: 9px;
+    font-weight: var(--font-weight-semibold);
+    color: white;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.legend-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}

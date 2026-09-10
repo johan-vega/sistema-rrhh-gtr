@@ -1,0 +1,41 @@
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+
+  @media (min-width: 600px) { grid-template-columns: repeat(4, 1fr); }
+}
+
+.stat-card {
+  &.pending .stat-value  { color: var(--color-pending); }
+  &.approved .stat-value { color: var(--color-approved); }
+  &.rejected .stat-value { color: var(--color-rejected); }
+  &.cancelled .stat-value{ color: var(--color-cancelled); }
+}
+
+.quick-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.req-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.req-worker {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+}
+
+.req-type, .req-dates {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: 0.125rem;
+}

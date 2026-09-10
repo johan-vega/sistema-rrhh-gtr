@@ -1,0 +1,95 @@
+<div class="page-container">
+
+  @if (loading()) {
+    <app-loading-spinner message="Cargando tu información..." />
+  } @else {
+
+    <!-- Bienvenida -->
+    <section class="welcome-section">
+      <div class="welcome-text">
+        <p class="welcome-greeting">¡Hola, {{ auth.currentUser()?.name }}! 👋</p>
+        <h1 class="welcome-title">¿Qué necesitas hoy?</h1>
+      </div>
+    </section>
+
+    <!-- Stats rápidas -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--color-pending)">{{ pendingCount }}</div>
+        <div class="stat-label">En revisión</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--color-approved)">{{ approvedCount }}</div>
+        <div class="stat-label">Aprobadas</div>
+      </div>
+    </div>
+
+    <!-- Acción principal -->
+    <a id="btn-nueva-solicitud" routerLink="/worker/requests/new" class="btn btn-primary btn-full btn-lg new-request-btn">
+      <span>+</span> NUEVA SOLICITUD
+    </a>
+
+    <!-- Solicitudes recientes -->
+    <section class="recent-section">
+      <h2 class="section-title">Solicitudes recientes</h2>
+
+      @if (recentRequests.length === 0) {
+        <div class="card">
+          <div class="card-body" style="text-align:center; padding: 2rem; color: var(--color-text-muted);">
+            <p style="font-size:2rem">📋</p>
+            <p style="margin-top:0.5rem">Aún no tienes solicitudes.</p>
+          </div>
+        </div>
+      } @else {
+        <div class="list-container">
+          @for (req of recentRequests; track req.id) {
+            <a [routerLink]="['/worker/requests', req.id]" class="card card-link request-card">
+              <div class="card-body">
+                <div class="req-header">
+                  <span class="req-type">{{ req.category.name }}</span>
+                  <app-status-badge [status]="req.status" />
+                </div>
+                <p class="req-dates">
+                  📅 {{ formatDate(req.start_date) }}
+                  @if (req.start_date !== req.end_date) {
+                    → {{ formatDate(req.end_date) }}
+                  }
+                </p>
+              </div>
+            </a>
+          }
+        </div>
+      }
+
+      @if (requests().length > 3) {
+        <a routerLink="/worker/requests" class="btn btn-secondary btn-full" style="margin-top:1rem">
+          Ver todas mis solicitudes
+        </a>
+      }
+    </section>
+
+    <!-- Accesos rápidos -->
+    <section class="quick-links">
+      <h2 class="section-title">Accesos rápidos</h2>
+      <div class="quick-grid">
+        <a routerLink="/worker/calendar" class="quick-card">
+          <span class="quick-icon">📅</span>
+          <span>Calendario</span>
+        </a>
+        <a routerLink="/worker/profile" class="quick-card">
+          <span class="quick-icon">👤</span>
+          <span>Mi Perfil</span>
+        </a>
+        <a routerLink="/worker/notifications" class="quick-card">
+          <span class="quick-icon">🔔</span>
+          <span>Notificaciones</span>
+        </a>
+        <a routerLink="/worker/requests" class="quick-card">
+          <span class="quick-icon">📋</span>
+          <span>Solicitudes</span>
+        </a>
+      </div>
+    </section>
+
+  }
+</div>
