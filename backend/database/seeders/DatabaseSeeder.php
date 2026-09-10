@@ -2,6 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Area;
+use App\Models\Position;
+use App\Models\RequestCategory;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,11 +19,22 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $hr = Role::firstOrCreate(['code' => Role::HR], ['name' => 'Recursos Humanos']);
+        Role::firstOrCreate(['code' => Role::WORKER], ['name' => 'Trabajador']);
+        User::firstOrCreate(['email' => 'rrhh@gtr.test'], ['name' => 'Administrador RRHH', 'password' => 'Password123!', 'role_id' => $hr->id]);
+        foreach (['Administración', 'Operaciones', 'Tecnología'] as $name) {
+            Area::firstOrCreate(['name' => $name]);
+        }
+        foreach (['Asistente', 'Analista', 'Coordinador'] as $name) {
+            Position::firstOrCreate(['name' => $name]);
+        }
+        foreach ([
+            ['name' => 'Vacaciones', 'description' => 'Solicitud de vacaciones', 'requires_document' => true, 'minimum_notice_days' => 15, 'allow_approved_cancellation' => false],
+            ['name' => 'Salud', 'description' => 'Permiso por salud', 'requires_document' => true, 'minimum_notice_days' => 0, 'allow_approved_cancellation' => true],
+            ['name' => 'Motivo personal', 'description' => 'Permiso por motivo personal', 'requires_document' => false, 'minimum_notice_days' => 2, 'allow_approved_cancellation' => false],
+            ['name' => 'Justificación de falta', 'description' => 'Sustento de una falta', 'requires_document' => true, 'minimum_notice_days' => 0, 'allow_approved_cancellation' => false],
+        ] as $category) {
+            RequestCategory::firstOrCreate(['name' => $category['name']], $category);
+        }
     }
 }
