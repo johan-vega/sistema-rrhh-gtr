@@ -5,63 +5,82 @@
   </div>
 
   <div class="login-card">
-    <!-- Logo / Header -->
+    <!-- Corporate Header -->
     <div class="login-header">
-      <div class="login-logo">
-        <span class="logo-icon">🏢</span>
+      <div class="login-logo-box">
+        <svg class="corp-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
       </div>
-      <h1 class="login-title">SISTEMA RRHH</h1>
-      <p class="login-subtitle">Gestión de solicitudes del personal</p>
+      <h1 class="corp-brand-name">PLÁSTICOS CORPORATIVOS S.A.</h1>
+      <p class="corp-system-sub">Sistema Integral de RRHH &amp; Permisos</p>
     </div>
 
-    <!-- Alerta sesión expirada -->
+    <!-- Session Expired Alert -->
     @if (sessionExpired()) {
       <div class="alert alert-warning" role="alert">
-        <span class="alert-icon">⚠️</span>
-        <span>Tu sesión ha expirado. Vuelve a iniciar sesión.</span>
+        <svg class="alert-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>Tu sesión ha expirado. Vuelve a ingresar tus credenciales corporativas.</span>
       </div>
     }
 
-    <!-- Error -->
+    <!-- Error Alert -->
     @if (error()) {
       <div class="alert alert-error" role="alert">
-        <span class="alert-icon">❌</span>
+        <svg class="alert-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
         <span>{{ error() }}</span>
       </div>
     }
 
-    <!-- Formulario -->
+    <!-- Login Form -->
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-
       <div class="form-group">
         <label class="form-label" for="email">
-          Usuario / Correo electrónico
+          Correo Institucional / DNI
         </label>
-        <input
-          id="email"
-          type="text"
-          class="form-control"
-          [class.is-invalid]="emailCtrl.invalid && emailCtrl.touched"
-          formControlName="email"
-          placeholder="Ingresa tu usuario o correo"
-          autocomplete="username"
-          autofocus
-        />
+        <div class="input-icon-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input
+            id="email"
+            type="text"
+            class="form-control with-icon"
+            [class.is-invalid]="emailCtrl.invalid && emailCtrl.touched"
+            formControlName="email"
+            placeholder="usuario@empresa.com"
+            autocomplete="username"
+            autofocus
+          />
+        </div>
         @if (emailCtrl.hasError('required') && emailCtrl.touched) {
-          <span class="form-error">⚠️ Este campo es obligatorio.</span>
+          <span class="form-error">Este campo es obligatorio.</span>
         }
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="password">Contraseña</label>
-        <div class="password-wrapper">
+        <label class="form-label" for="password">Contraseña Corporativa</label>
+        <div class="input-icon-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
           <input
             id="password"
             [type]="showPassword() ? 'text' : 'password'"
-            class="form-control"
+            class="form-control with-icon"
             [class.is-invalid]="passCtrl.invalid && passCtrl.touched"
             formControlName="password"
-            placeholder="Ingresa tu contraseña"
+            placeholder="••••••••••••"
             autocomplete="current-password"
           />
           <button
@@ -70,11 +89,19 @@
             (click)="togglePassword()"
             [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           >
-            {{ showPassword() ? '🙈' : '👁️' }}
+            <svg class="toggle-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              @if (showPassword()) {
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              } @else {
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              }
+            </svg>
           </button>
         </div>
         @if (passCtrl.hasError('required') && passCtrl.touched) {
-          <span class="form-error">⚠️ La contraseña es obligatoria.</span>
+          <span class="form-error">La contraseña es obligatoria.</span>
         }
       </div>
 
@@ -86,25 +113,31 @@
       >
         @if (loading()) {
           <span class="spinner"></span>
-          Ingresando...
+          Autenticando...
         } @else {
-          Iniciar sesión
+          Ingresar al Portal Corporativo
         }
       </button>
-
     </form>
 
     <div class="login-footer">
       <a href="mailto:rrhh@empresa.com" class="forgot-link">
-        ¿Olvidaste tu contraseña? Contacta a RRHH
+        ¿Problemas para ingresar? Soporte RRHH &amp; TI
       </a>
     </div>
 
-    <!-- Info modo demo -->
+    <!-- Quick Demo Accounts -->
     <div class="demo-info">
-      <p class="demo-title">🔧 Modo desarrollo</p>
-      <p>Trabajador: <strong>cualquier email</strong> + contraseña ≥ 3 chars</p>
-      <p>RRHH: email con <strong>"rrhh"</strong> + contraseña ≥ 3 chars</p>
+      <div class="demo-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="demo-svg">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>Acceso Demo Rápido</span>
+      </div>
+      <p><strong>Trabajador:</strong> <code>juan&#64;empresa.com</code> (o cualquier email)</p>
+      <p><strong>RRHH / Admin:</strong> <code>rrhh&#64;empresa.com</code> (email que contenga "rrhh")</p>
     </div>
   </div>
 </main>
