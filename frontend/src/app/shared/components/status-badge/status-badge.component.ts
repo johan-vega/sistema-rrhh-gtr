@@ -2,10 +2,10 @@ import { Component, input } from '@angular/core';
 import { RequestStatus } from '../../../core/models/index';
 
 const STATUS_CONFIG: Record<RequestStatus, { label: string; css: string; icon: string }> = {
-  PENDING:   { label: 'EN REVISIÓN', css: 'badge-pending',   icon: '🟡' },
-  APPROVED:  { label: 'APROBADA',    css: 'badge-approved',  icon: '🟢' },
-  REJECTED:  { label: 'RECHAZADA',   css: 'badge-rejected',  icon: '🔴' },
-  CANCELLED: { label: 'CANCELADA',   css: 'badge-cancelled', icon: '⚫' },
+  PENDING:   { label: 'EN REVISIÓN', css: 'badge-pending',   icon: '' },
+  APPROVED:  { label: 'APROBADA',    css: 'badge-approved',  icon: '' },
+  REJECTED:  { label: 'RECHAZADA',   css: 'badge-rejected',  icon: '' },
+  CANCELLED: { label: 'CANCELADA',   css: 'badge-cancelled', icon: '' },
 };
 
 @Component({

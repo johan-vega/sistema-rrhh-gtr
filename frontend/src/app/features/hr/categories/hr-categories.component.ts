@@ -62,10 +62,10 @@ import { RequestCategory } from '../../../core/models/index';
 
           <div class="cat-rules">
             <span class="rule-pill">
-              📅 Mín. {{ cat.minimum_advance_days }} días de anticipación
+              Mín. {{ cat.minimum_advance_days }} días de anticipación
             </span>
             <span class="rule-pill" [class.req]="cat.requires_document">
-              📎 {{ cat.requires_document ? 'Documento Obligatorio' : 'Documento Opcional' }}
+              {{ cat.requires_document ? 'Documento Obligatorio' : 'Documento Opcional' }}
             </span>
           </div>
 

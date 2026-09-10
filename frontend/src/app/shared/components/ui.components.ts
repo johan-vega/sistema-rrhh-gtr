@@ -43,7 +43,7 @@ export class LoadingSpinnerComponent {
   selector: 'app-empty-state',
   template: `
     <div class="empty-state">
-      <div class="empty-icon">{{ icon() }}</div>
+      <div class="empty-icon" [innerHTML]="icon()"></div>
       <h3 class="empty-title">{{ title() }}</h3>
       @if (subtitle()) {
         <p class="empty-subtitle">{{ subtitle() }}</p>
@@ -74,7 +74,7 @@ export class LoadingSpinnerComponent {
   `],
 })
 export class EmptyStateComponent {
-  icon     = input<string>('📭');
+  icon     = input<string>('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>');
   title    = input<string>('Sin resultados');
   subtitle = input<string>('');
 }

@@ -21,7 +21,7 @@ import { LoadingSpinnerComponent, EmptyStateComponent } from '../../../shared/co
       @if (loading()) {
         <app-loading-spinner />
       } @else if (notifications().length === 0) {
-        <app-empty-state icon="🔔" title="Sin notificaciones" subtitle="Aquí aparecerán los cambios en tus solicitudes." />
+        <app-empty-state icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' title="Sin notificaciones" subtitle="Aquí aparecerán los cambios en tus solicitudes." />
       } @else {
         <div class="list-container">
           @for (n of notifications(); track n.id) {

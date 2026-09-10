@@ -56,7 +56,7 @@ export class WorkerRequestNewComponent implements OnInit {
 
     if (diffDays < cat.minimum_advance_days) {
       this.dateWarning.set(
-        `⚠️ Esta categoría requiere al menos ${cat.minimum_advance_days} día(s) de anticipación.`
+        `Esta categoría requiere al menos ${cat.minimum_advance_days} día(s) de anticipación.`
       );
     } else {
       this.dateWarning.set('');
@@ -70,11 +70,11 @@ export class WorkerRequestNewComponent implements OnInit {
 
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!allowed.includes(file.type)) {
-      this.error.set('⚠️ Solo se permiten archivos PDF, JPG o PNG.');
+      this.error.set('Solo se permiten archivos PDF, JPG o PNG.');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      this.error.set('⚠️ El archivo no debe superar 5 MB.');
+      this.error.set('El archivo no debe superar 5 MB.');
       return;
     }
     this.error.set('');
@@ -93,7 +93,7 @@ export class WorkerRequestNewComponent implements OnInit {
     if (this.form.invalid || this.loading()) return;
     const cat = this.selectedCategory();
     if (cat?.requires_document && !this.selectedFile()) {
-      this.error.set('⚠️ Esta categoría requiere adjuntar un documento.');
+      this.error.set('Esta categoría requiere adjuntar un documento.');
       return;
     }
     this.error.set('');
@@ -114,7 +114,7 @@ export class WorkerRequestNewComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(err?.error?.message || '⚠️ No se pudo enviar. Revisa los datos.');
+        this.error.set(err?.error?.message || 'No se pudo enviar. Revisa los datos.');
       },
     });
   }

@@ -16,10 +16,10 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
         <app-loading-spinner />
       } @else if (user()) {
         @if (saved()) {
-          <div class="alert alert-success">✅ Cambios guardados correctamente.</div>
+          <div class="alert alert-success">Cambios guardados correctamente.</div>
         }
         @if (error()) {
-          <div class="alert alert-error">❌ {{ error() }}</div>
+          <div class="alert alert-error">{{ error() }}</div>
         }
 
         <!-- Datos de solo lectura -->
@@ -57,7 +57,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
               </div>
             </div>
             <div class="readonly-notice">
-              🔒 Estos datos solo pueden ser modificados por RRHH.
+              Estos datos solo pueden ser modificados por RRHH.
             </div>
           </div>
         </div>

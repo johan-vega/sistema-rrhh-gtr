@@ -24,7 +24,7 @@ import { AppNotification } from '../../../core/models/index';
           [class.read]="n.read"
         >
           <div class="notif-icon">
-            🔔
+            
           </div>
 
           <div class="notif-body">
