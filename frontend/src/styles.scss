@@ -10,103 +10,96 @@
   CSS CUSTOM PROPERTIES (Tokens)
    ============================================================ */
 :root {
-  /* Colors — Corporate Industrial Plastics Palette */
-  --color-primary: #0F172A;
-  --color-primary-light: #1E293B;
-  --color-accent: #0284C7;
-  --color-accent-hover: #0369A1;
-  --color-accent-subtle: rgba(2, 132, 199, 0.1);
+  /* Colores corporativos: cambie esta gama para personalizar la identidad visual. */
+  --color-primary: #0F172A; /* Color corporativo principal: barras y elementos oscuros. */
+  --color-primary-light: #1E293B; /* Variante clara del color principal: fondos oscuros secundarios. */
+  --color-accent: #0284C7; /* Color de acción: botones principales, enlaces y elementos activos. */
+  --color-accent-hover: #0369A1; /* Color de acción al pasar el cursor por botones y enlaces. */
+  --color-accent-subtle: rgba(2, 132, 199, 0.1); /* Color de acción suave: fondos de resaltado. */
 
-  /* Colors — Backgrounds */
-  --color-bg: #F8FAFC;
-  --color-surface: #FFFFFF;
-  --color-surface-2: #F1F5F9;
-  --color-border: #E2E8F0;
-  --color-border-light: #F1F5F9;
+  /* Fondos y bordes */
+  --color-bg: #F8FAFC; /* Fondo general de todas las páginas. */
+  --color-surface: #FFFFFF; /* Fondo de tarjetas, formularios y paneles. */
+  --color-surface-2: #F1F5F9; /* Fondo alternativo de secciones y controles. */
+  --color-border: #E2E8F0; /* Color de bordes estándar. */
+  --color-border-light: #F1F5F9; /* Color de separadores y bordes sutiles. */
 
-  /* Colors — Text */
-  --color-text-primary: #0F172A;
-  --color-text-secondary: #475569;
-  --color-text-muted: #64748B;
-  --color-text-inverse: #FFFFFF;
+  /* Colores de texto */
+  --color-text-primary: #0F172A; /* Texto principal, títulos y datos importantes. */
+  --color-text-secondary: #475569; /* Texto secundario en tarjetas y formularios. */
+  --color-text-muted: #64748B; /* Texto auxiliar, fechas y ayudas. */
+  --color-text-inverse: #FFFFFF; /* Texto sobre fondos oscuros o botones primarios. */
 
-  /* Colors — Status */
-  --color-pending: #F59E0B;
-  --color-pending-bg: #FFFBEB;
-  --color-pending-border: #FCD34D;
-  --color-approved: #10B981;
-  --color-approved-bg: #ECFDF5;
-  --color-approved-border: #6EE7B7;
-  --color-rejected: #EF4444;
-  --color-rejected-bg: #FEF2F2;
-  --color-rejected-border: #FCA5A5;
-  --color-cancelled: #6B7280;
-  --color-cancelled-bg: #F9FAFB;
-  --color-cancelled-border: #D1D5DB;
+  /* Colores de estado de solicitudes */
+  --color-pending: #F59E0B; /* Estado pendiente: texto, iconos y etiquetas. */
+  --color-pending-bg: #FFFBEB; /* Fondo de una solicitud pendiente. */
+  --color-pending-border: #FCD34D; /* Borde de una solicitud pendiente. */
+  --color-approved: #10B981; /* Estado aprobado: texto, iconos y etiquetas. */
+  --color-approved-bg: #ECFDF5; /* Fondo de una solicitud aprobada. */
+  --color-approved-border: #6EE7B7; /* Borde de una solicitud aprobada. */
+  --color-rejected: #EF4444; /* Estado rechazado: texto, iconos y etiquetas. */
+  --color-rejected-bg: #FEF2F2; /* Fondo de una solicitud rechazada. */
+  --color-rejected-border: #FCA5A5; /* Borde de una solicitud rechazada. */
+  --color-cancelled: #6B7280; /* Estado cancelado: texto, iconos y etiquetas. */
+  --color-cancelled-bg: #F9FAFB; /* Fondo de una solicitud cancelada. */
+  --color-cancelled-border: #D1D5DB; /* Borde de una solicitud cancelada. */
 
-  /* Colors — Feedback */
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #0284C7;
+  /* Colores de mensajes del sistema */
+  --color-success: #10B981; /* Confirmaciones correctas. */
+  --color-warning: #F59E0B; /* Advertencias que requieren atención. */
+  --color-error: #EF4444; /* Errores de validación o acciones fallidas. */
+  --color-info: #0284C7; /* Avisos informativos. */
 
-  /* Typography */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-size-xs: 0.75rem;
-  /* 12px */
-  --font-size-sm: 0.875rem;
-  /* 14px */
-  --font-size-base: 1rem;
-  /* 16px */
-  --font-size-lg: 1.125rem;
-  /* 18px */
-  --font-size-xl: 1.25rem;
-  /* 20px */
-  --font-size-2xl: 1.5rem;
-  /* 24px */
-  --font-size-3xl: 1.875rem;
-  /* 30px */
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  --font-weight-extrabold: 800;
+  /* Tipografía */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; /* Fuente de todo el sistema. */
+  --font-size-xs: 0.75rem; /* Texto extra pequeño: 12 px. */
+  --font-size-sm: 0.875rem; /* Texto pequeño: 14 px. */
+  --font-size-base: 1rem; /* Tamaño base de formularios y párrafos: 16 px. */
+  --font-size-lg: 1.125rem; /* Texto destacado: 18 px. */
+  --font-size-xl: 1.25rem; /* Subtítulos: 20 px. */
+  --font-size-2xl: 1.5rem; /* Títulos de sección: 24 px. */
+  --font-size-3xl: 1.875rem; /* Títulos principales: 30 px. */
+  --font-weight-regular: 400; /* Grosor normal. */
+  --font-weight-medium: 500; /* Grosor medio. */
+  --font-weight-semibold: 600; /* Grosor seminegrita. */
+  --font-weight-bold: 700; /* Grosor negrita. */
+  --font-weight-extrabold: 800; /* Grosor muy destacado. */
 
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
+  /* Espaciado reutilizable */
+  --space-1: 0.25rem; /* Separación mínima: 4 px. */
+  --space-2: 0.5rem; /* Separación pequeña: 8 px. */
+  --space-3: 0.75rem; /* Separación compacta: 12 px. */
+  --space-4: 1rem; /* Separación estándar: 16 px. */
+  --space-5: 1.25rem; /* Separación media: 20 px. */
+  --space-6: 1.5rem; /* Separación amplia: 24 px. */
+  --space-8: 2rem; /* Separación de bloques: 32 px. */
+  --space-10: 2.5rem; /* Separación grande: 40 px. */
+  --space-12: 3rem; /* Separación muy grande: 48 px. */
+  --space-16: 4rem; /* Separación máxima: 64 px. */
 
-  /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-full: 9999px;
+  /* Redondeo de esquinas */
+  --radius-sm: 6px; /* Campos y elementos pequeños. */
+  --radius-md: 10px; /* Botones y tarjetas normales. */
+  --radius-lg: 16px; /* Tarjetas destacadas. */
+  --radius-xl: 20px; /* Contenedores amplios. */
+  --radius-full: 9999px; /* Avatares, píldoras y elementos circulares. */
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.09), 0 4px 6px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 35px rgba(15, 23, 42, 0.12);
+  /* Sombras para profundidad visual */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04); /* Sombra apenas perceptible. */
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03); /* Sombra de controles. */
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.04); /* Sombra de tarjetas. */
+  --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.09), 0 4px 6px rgba(15, 23, 42, 0.04); /* Sombra de menús o paneles. */
+  --shadow-xl: 0 20px 35px rgba(15, 23, 42, 0.12); /* Sombra de diálogos destacados. */
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Velocidad de animaciones */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1); /* Respuesta rápida de botones y enlaces. */
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1); /* Transición estándar de paneles y menús. */
 
-  /* Layout */
-  --sidebar-width: 260px;
-  --topbar-height: 64px;
-  --bottom-nav-height: 64px;
-  --content-max-width: 900px;
+  /* Medidas principales de la interfaz */
+  --sidebar-width: 260px; /* Ancho del menú lateral en escritorio. */
+  --topbar-height: 64px; /* Alto de la barra superior móvil. */
+  --bottom-nav-height: 64px; /* Alto reservado para una navegación inferior. */
+  --content-max-width: 900px; /* Ancho máximo del contenido central. */
 }
 
 *,

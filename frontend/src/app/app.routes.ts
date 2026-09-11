@@ -98,6 +98,10 @@ export const routes: Routes = [
         path: 'notifications',
         loadComponent: () => import('./features/hr/notifications/hr-notifications.component').then(m => m.HrNotificationsComponent),
       },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/hr/profile/hr-profile.component').then(m => m.HrProfileComponent),
+      },
     ],
   },
   {

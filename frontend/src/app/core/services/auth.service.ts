@@ -95,7 +95,7 @@ export class AuthService {
     }
   }
 
-  login(credentials: LoginCredentials): Observable<AuthResponse> {
+  login(credentials: LoginCredentials, remember = false): Observable<AuthResponse> {
     return this.http.post<LaravelAuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
       map(res => ({
         ...res,
@@ -105,7 +105,7 @@ export class AuthService {
         },
       })),
       tap(res => {
-        if (res.success) this._saveSession(res.data.user, res.data.token);
+        if (res.success) this._saveSession(res.data.user, res.data.token, remember);
       }),
     );
   }
@@ -136,6 +136,14 @@ export class AuthService {
     else                   this.router.navigate(['/login'], { replaceUrl: true });
   }
 
+  updateCurrentUser(changes: Pick<User, 'name' | 'full_name' | 'email'>): void {
+    const current = this._currentUser();
+    if (!current) return;
+    const user = { ...current, ...changes };
+    this._currentUser.set(user);
+    this.storage.setUser(user);
+  }
+
   hasStoredSession(): boolean {
     return Boolean(this.storage.getToken() && this._currentUser());
   }
@@ -152,9 +160,8 @@ export class AuthService {
     );
   }
 
-  private _saveSession(user: User, token: string): void {
-    this.storage.setToken(token);
-    this.storage.setUser(user);
+  private _saveSession(user: User, token: string, remember = false): void {
+    this.storage.setSession(token, user, remember);
     this._currentUser.set(user);
   }
 

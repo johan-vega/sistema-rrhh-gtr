@@ -1,0 +1,49 @@
+<div class="page-container">
+  <h1 class="page-title">Mi perfil</h1>
+
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else {
+    @if (saved()) { <div class="alert alert-success">Perfil actualizado correctamente.</div> }
+    @if (error()) { <div class="alert alert-error">{{ error() }}</div> }
+
+    <form class="profile-grid" [formGroup]="form" (ngSubmit)="save()">
+      <section class="card">
+        <div class="card-header"><h2>Datos de la cuenta RRHH</h2></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label" for="hr-name">Nombre</label>
+            <input id="hr-name" class="form-control" type="text" formControlName="name" autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="hr-email">Correo institucional</label>
+            <input id="hr-email" class="form-control" type="email" formControlName="email" autocomplete="email" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2>Cambiar contraseña</h2></div>
+        <div class="card-body">
+          <p class="password-help">Deja estos campos vacíos si no deseas cambiar la contraseña.</p>
+          <div class="form-group">
+            <label class="form-label" for="current-password">Contraseña actual</label>
+            <input id="current-password" class="form-control" type="password" formControlName="current_password" autocomplete="current-password" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-password">Nueva contraseña</label>
+            <input id="new-password" class="form-control" type="password" formControlName="password" autocomplete="new-password" />
+            <span class="form-hint">Mínimo 8 caracteres.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="confirm-password">Confirmar nueva contraseña</label>
+            <input id="confirm-password" class="form-control" type="password" formControlName="password_confirmation" autocomplete="new-password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" [disabled]="saving()">
+            @if (saving()) { <span class="spinner"></span> Guardando... } @else { Guardar cambios }
+          </button>
+        </div>
+      </section>
+    </form>
+  }
+</div>

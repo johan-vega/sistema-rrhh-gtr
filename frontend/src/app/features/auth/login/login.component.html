@@ -8,9 +8,7 @@
     <!-- Corporate Header -->
     <div class="login-header">
       <div class="login-logo-box">
-        <svg class="corp-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-        </svg>
+        <img class="corp-logo-image" src="/assets/logo-generico-gtr.png" alt="Logo temporal de la empresa" />
       </div>
       <h1 class="corp-brand-name">PLÁSTICOS CORPORATIVOS S.A.</h1>
       <p class="corp-system-sub">Sistema Integral de RRHH &amp; Permisos</p>
@@ -91,6 +89,11 @@
         }
       </div>
 
+      <label class="remember-session">
+        <input type="checkbox" formControlName="remember" />
+        <span>Mantener sesión iniciada en este dispositivo</span>
+      </label>
+
       <button id="btn-login" type="submit" class="btn btn-primary btn-full btn-lg" [disabled]="loading()">
         @if (loading()) {
         <span class="spinner"></span>
@@ -100,6 +103,14 @@
         }
       </button>
     </form>
+
+    @if (pwa.installAvailable()) {
+      <section class="browser-permission" aria-label="Instalar aplicación">
+        <strong>¿Deseas instalar la aplicación?</strong>
+        <p>Podrás abrirla desde el escritorio o la pantalla de inicio.</p>
+        <button type="button" class="btn btn-secondary btn-full" (click)="pwa.install()">Descargar aplicación</button>
+      </section>
+    }
 
     <div class="login-footer">
       <a href="mailto:rrhh@empresa.com" class="forgot-link">

@@ -27,13 +27,7 @@ export const hrGuard: CanActivateFn = () => {
 };
 
 export const publicGuard: CanActivateFn = () => {
-  const auth   = inject(AuthService);
-  const router = inject(Router);
-  if (!auth.hasStoredSession()) return true;
-  return auth.verifySession().pipe(map(valid => {
-    if (!valid) return true;
-    if (auth.isHr()) return router.createUrlTree(['/hr/dashboard']);
-    if (auth.isWorker()) return router.createUrlTree(['/worker/dashboard']);
-    return true;
-  }));
+  // La URL pública de inicio siempre muestra el formulario de acceso.
+  // Una sesión recordada solo se usa al navegar a una ruta privada.
+  return true;
 };
