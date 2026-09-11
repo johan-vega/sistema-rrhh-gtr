@@ -1,0 +1,92 @@
+<div class="hr-detail-container">
+  <div class="top-nav">
+    <a routerLink="/hr/requests" class="back-link">&lsaquo; Volver a la Lista</a>
+  </div>
+
+  <app-loading-spinner *ngIf="loading()"></app-loading-spinner>
+
+  <div class="detail-card" *ngIf="!loading() && request()">
+    <div class="card-header">
+      <div>
+        <h2>Solicitud #{{ request()!.id }}</h2>
+        <p class="subtitle">Evaluación de RRHH</p>
+      </div>
+      <app-status-badge [status]="request()!.status"></app-status-badge>
+    </div>
+
+    <div class="info-section">
+      <h3>Datos del Trabajador</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Trabajador:</span>
+          <span class="val">{{ request()!.employee?.full_name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">DNI:</span>
+          <span class="val">{{ request()!.employee?.dni }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Área:</span>
+          <span class="val">{{ request()!.employee?.area?.name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Cargo:</span>
+          <span class="val">{{ request()!.employee?.position?.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3>Detalles de la Solicitud</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Categoría:</span>
+          <span class="val">{{ request()!.category.name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Fechas:</span>
+          <span class="val">{{ formatDate(request()!.start_date) }} — {{ formatDate(request()!.end_date) }}</span>
+        </div>
+        <div class="info-item full">
+          <span class="label">Motivo:</span>
+          <p class="reason-box">{{ request()!.reason }}</p>
+        </div>
+        <div class="info-item full" *ngIf="request()!.document_url">
+          <span class="label">Documento Adjunto:</span>
+          <a [href]="request()!.document_url" target="_blank" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 4px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Ver Documento Adjunto</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions-bar" *ngIf="isActionable">
+      <button (click)="confirmApprove()" [disabled]="processing()" class="btn-approve">
+        ✓ Aprobar Solicitud
+      </button>
+      <button (click)="confirmReject()" [disabled]="processing()" class="btn-reject">
+        ✕ Rechazar Solicitud
+      </button>
+    </div>
+  </div>
+
+  <app-confirm-dialog
+    *ngIf="showApprove()"
+    title="Aprobar Solicitud"
+    message="¿Confirmas la aprobación de esta solicitud?"
+    confirmLabel="Aprobar"
+    confirmClass="btn-success"
+    (confirmed)="doApprove()"
+    (dismissed)="dismissDialogs()"
+  ></app-confirm-dialog>
+
+  <app-confirm-dialog
+    *ngIf="showReject()"
+    title="Rechazar Solicitud"
+    message="Ingresa el motivo del rechazo para notificar al trabajador."
+    inputLabel="Motivo de rechazo"
+    inputPlaceholder="Ej: Falta documento justificatorio..."
+    confirmLabel="Rechazar"
+    confirmClass="btn-danger"
+    (confirmed)="doReject($event)"
+    (dismissed)="dismissDialogs()"
+  ></app-confirm-dialog>
+</div>

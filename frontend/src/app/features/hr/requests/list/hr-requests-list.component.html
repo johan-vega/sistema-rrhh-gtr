@@ -1,0 +1,49 @@
+<div class="hr-requests-container">
+  <div class="header-section">
+    <h2>Solicitudes de Personal</h2>
+    <p>Revisa, aprueba o rechaza solicitudes de vacaciones, licencias y permisos.</p>
+  </div>
+
+  <div class="filters-box" [formGroup]="filterForm">
+    <input type="text" formControlName="search" placeholder="Buscar trabajador o categoría..." class="input-search" />
+    <select formControlName="status" class="select-filter">
+      <option value="">Todos los Estados</option>
+      <option value="PENDING">Pendientes</option>
+      <option value="APPROVED">Aprobadas</option>
+      <option value="REJECTED">Rechazadas</option>
+      <option value="CANCELLED">Canceladas</option>
+    </select>
+  </div>
+
+  <app-loading-spinner *ngIf="loading()"></app-loading-spinner>
+
+  <app-empty-state 
+    *ngIf="!loading() && filtered.length === 0"
+    title="Sin solicitudes"
+    message="No hay solicitudes que coincidan con los filtros."
+  ></app-empty-state>
+
+  <div class="requests-grid" *ngIf="!loading() && filtered.length > 0">
+    <div *ngFor="let req of filtered" class="request-card">
+      <div class="card-header">
+        <div class="emp-info">
+          <h4>{{ req.employee?.full_name || 'Trabajador' }}</h4>
+          <span class="area-tag">{{ req.employee?.area?.name }} • {{ req.employee?.position?.name }}</span>
+        </div>
+        <app-status-badge [status]="req.status"></app-status-badge>
+      </div>
+
+      <div class="card-body">
+        <div class="cat-title">{{ req.category.name }}</div>
+        <div class="dates-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> {{ formatDate(req.start_date) }} — {{ formatDate(req.end_date) }}
+        </div>
+        <p class="reason-text">"{{ req.reason }}"</p>
+      </div>
+
+      <div class="card-footer">
+        <a [routerLink]="['/hr/requests', req.id]" class="btn-detail">Ver Detalle / Evaluar</a>
+      </div>
+    </div>
+  </div>
+</div>

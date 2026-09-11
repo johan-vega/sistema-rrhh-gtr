@@ -1,0 +1,52 @@
+<div class="page-container">
+  <h1 class="page-title">Mi Calendario</h1>
+  <p class="page-subtitle" style="color:var(--color-text-muted); margin-bottom:1.5rem; font-size:var(--font-size-sm)">
+    Solo se muestran tus solicitudes aprobadas.
+  </p>
+
+  <div class="card">
+    <!-- Navegación de mes -->
+    <div class="cal-nav">
+      <button class="btn btn-ghost btn-icon" (click)="prevMonth()" aria-label="Mes anterior">‹</button>
+      <h2 class="cal-month">{{ monthName | titlecase }}</h2>
+      <button class="btn btn-ghost btn-icon" (click)="nextMonth()" aria-label="Mes siguiente">›</button>
+    </div>
+
+    <!-- Encabezados de días -->
+    <div class="cal-grid">
+      @for (d of ['Lu','Ma','Mi','Ju','Vi','Sa','Do']; track d) {
+        <div class="cal-day-header">{{ d }}</div>
+      }
+
+      @for (day of calendarDays; track $index) {
+        <div class="cal-cell" [class.today]="day && isToday(day)" [class.empty]="!day">
+          @if (day) {
+            <span class="day-number" [class.today-num]="isToday(day)">{{ day }}</span>
+            @for (ev of getEventsForDay(day); track ev.id) {
+              <div class="cal-event" [style.background]="getColor(ev.category)" [title]="ev.category">
+                <span class="event-label">{{ ev.category }}</span>
+              </div>
+            }
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Leyenda -->
+  @if (events().length > 0) {
+    <div class="legend card" style="margin-top:1rem">
+      <div class="card-body" style="padding:1rem">
+        <p class="legend-title">Leyenda</p>
+        <div class="legend-items">
+          @for (ev of events(); track ev.id) {
+            <div class="legend-item">
+              <span class="legend-dot" [style.background]="getColor(ev.category)"></span>
+              <span class="legend-text">{{ ev.category }} · {{ ev.start_date === ev.end_date ? ev.start_date : ev.start_date + ' → ' + ev.end_date }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,24 @@
+.page-header-back {
+  margin-bottom: 1.25rem;
+}
+
+.back-btn {
+  font-size: var(--font-size-sm);
+  color: var(--color-accent);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  &:hover { text-decoration: underline; }
+}
+
+.dates-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: 360px) { grid-template-columns: 1fr; }
+}
+
+.category-info { margin-bottom: 0.75rem; }

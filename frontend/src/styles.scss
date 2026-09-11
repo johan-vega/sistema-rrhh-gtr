@@ -1,1 +1,349 @@
-/* You can add global styles to this file, and also import other style files */
+/* ============================================================
+   SISTEMA RRHH — Industrial Plastics Corporate Design System
+   Modern Corporate | Inter font | Slate & Industrial Cyan
+   ============================================================ */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ============================================================
+   CSS CUSTOM PROPERTIES (Tokens)
+   ============================================================ */
+:root {
+  /* Colors — Corporate Industrial Plastics Palette */
+  --color-primary: #0F172A;
+  --color-primary-light: #1E293B;
+  --color-accent: #0284C7;
+  --color-accent-hover: #0369A1;
+  --color-accent-subtle: rgba(2, 132, 199, 0.1);
+
+  /* Colors — Backgrounds */
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-border-light: #F1F5F9;
+
+  /* Colors — Text */
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #FFFFFF;
+
+  /* Colors — Status */
+  --color-pending: #F59E0B;
+  --color-pending-bg: #FFFBEB;
+  --color-pending-border: #FCD34D;
+  --color-approved: #10B981;
+  --color-approved-bg: #ECFDF5;
+  --color-approved-border: #6EE7B7;
+  --color-rejected: #EF4444;
+  --color-rejected-bg: #FEF2F2;
+  --color-rejected-border: #FCA5A5;
+  --color-cancelled: #6B7280;
+  --color-cancelled-bg: #F9FAFB;
+  --color-cancelled-border: #D1D5DB;
+
+  /* Colors — Feedback */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #0284C7;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.09), 0 4px 6px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 35px rgba(15, 23, 42, 0.12);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --topbar-height: 64px;
+  --bottom-nav-height: 64px;
+  --content-max-width: 900px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  &:hover { color: var(--color-accent-hover); }
+}
+
+img, svg { display: block; max-width: 100%; }
+
+input, textarea, select, button {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+}
+
+button { cursor: pointer; }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.75rem 1.5rem;
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+
+  &:hover { background: var(--color-accent-hover); transform: translateY(-1px); }
+}
+
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1.5px solid var(--color-border);
+  &:hover { background: var(--color-surface-2); border-color: var(--color-accent); }
+}
+
+.btn-danger {
+  background: var(--color-rejected);
+  color: var(--color-text-inverse);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+  &:hover { background: #DC2626; transform: translateY(-1px); }
+}
+
+.btn-success {
+  background: var(--color-approved);
+  color: var(--color-text-inverse);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  &:hover { background: #059669; transform: translateY(-1px); }
+}
+
+.btn-full { width: 100%; }
+
+/* Form controls */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.form-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  min-height: 46px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  transition: all var(--transition-fast);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  }
+}
+
+/* Cards */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-body { padding: var(--space-6); }
+
+/* Details List */
+.detail-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-row {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+@media (min-width: 640px) {
+  .detail-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-4);
+  }
+}
+
+.detail-label {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  min-width: 140px;
+}
+
+.detail-value {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.badge-pending {
+  background: var(--color-pending-bg);
+  border-color: var(--color-pending-border);
+  color: #B45309;
+}
+
+.badge-approved {
+  background: var(--color-approved-bg);
+  border-color: var(--color-approved-border);
+  color: #065F46;
+}
+
+.badge-rejected {
+  background: var(--color-rejected-bg);
+  border-color: var(--color-rejected-border);
+  color: #991B1B;
+}
+
+.badge-cancelled {
+  background: var(--color-cancelled-bg);
+  border-color: var(--color-cancelled-border);
+  color: #374151;
+}
+
+.page-container {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-4);
+  @media (min-width: 768px) { padding: var(--space-6); }
+}
+
+.page-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--color-primary);
+  margin-bottom: var(--space-6);
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,74 @@
+<div class="page-container">
+  <h1 class="page-title">Panel de RRHH</h1>
+
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else if (stats(); as s) {
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card pending">
+        <div class="stat-value">{{ s.pending }}</div>
+        <div class="stat-label">Pendientes</div>
+      </div>
+      <div class="stat-card approved">
+        <div class="stat-value">{{ s.approved }}</div>
+        <div class="stat-label">Aprobadas</div>
+      </div>
+      <div class="stat-card rejected">
+        <div class="stat-value">{{ s.rejected }}</div>
+        <div class="stat-label">Rechazadas</div>
+      </div>
+      <div class="stat-card cancelled">
+        <div class="stat-value">{{ s.cancelled }}</div>
+        <div class="stat-label">Canceladas</div>
+      </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="quick-actions">
+      <a routerLink="/hr/requests" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Ver todas las solicitudes
+      </a>
+      <a routerLink="/hr/workers/new" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Nuevo trabajador
+      </a>
+    </div>
+
+    <!-- Solicitudes pendientes recientes -->
+    <section>
+      <h2 class="section-title">Solicitudes pendientes</h2>
+      @if (s.recent_requests.length === 0) {
+        <div class="card">
+          <div class="card-body" style="text-align:center; padding:2rem; color:var(--color-text-muted)">
+            <p>No hay solicitudes pendientes.</p>
+          </div>
+        </div>
+      } @else {
+        <div class="list-container">
+          @for (req of s.recent_requests; track req.id) {
+            <a [routerLink]="['/hr/requests', req.id]" class="card card-link">
+              <div class="card-body">
+                <div class="req-header">
+                  <div>
+                    <p class="req-worker">{{ req.employee?.full_name ?? 'Trabajador' }}</p>
+                    <p class="req-type">{{ req.category.name }}</p>
+                  </div>
+                  <app-status-badge [status]="req.status" />
+                </div>
+                <p class="req-dates">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> {{ formatDate(req.start_date) }}
+                  @if (req.start_date !== req.end_date) { → {{ formatDate(req.end_date) }} }
+                </p>
+              </div>
+            </a>
+          }
+        </div>
+        <a routerLink="/hr/requests" class="btn btn-secondary btn-full" style="margin-top:1rem">
+          Ver todas
+        </a>
+      }
+    </section>
+
+  }
+</div>
