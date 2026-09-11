@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   LeaveRequest, CreateRequestPayload, RejectRequestPayload,
   ApiResponse, RequestFilters, RequestStatus,
 } from '../models/index';
+import { apiList, mapRequest, mapResponse } from '../mappers/api.mappers';
 
 const MOCK_REQUESTS: LeaveRequest[] = [
   {
@@ -51,7 +52,15 @@ export class RequestService {
 
   getAll(filters?: RequestFilters): Observable<ApiResponse<LeaveRequest[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_REQUESTS });
-    return this.http.get<ApiResponse<LeaveRequest[]>>(this.apiUrl, { params: filters as any });
+    const params = {
+      category_id: filters?.category_id ?? '',
+      status: this.toBackendStatus(filters?.status),
+      from: filters?.start_date ?? '',
+      to: filters?.end_date ?? '',
+    };
+    return this.http.get<ApiResponse<any>>(this.apiUrl, { params }).pipe(
+      map(res => mapResponse(res, data => apiList(data).map(mapRequest))),
+    );
   }
 
   getById(id: number): Observable<ApiResponse<LeaveRequest>> {
@@ -59,7 +68,7 @@ export class RequestService {
       const req = MOCK_REQUESTS.find(r => r.id === id) ?? MOCK_REQUESTS[0];
       return of({ success: true, message: 'OK', data: req });
     }
-    return this.http.get<ApiResponse<LeaveRequest>>(`${this.apiUrl}/${id}`);
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}`).pipe(map(res => mapResponse(res, mapRequest)));
   }
 
   create(payload: CreateRequestPayload): Observable<ApiResponse<LeaveRequest>> {
@@ -78,8 +87,8 @@ export class RequestService {
     form.append('start_date', payload.start_date);
     form.append('end_date', payload.end_date);
     form.append('reason', payload.reason);
-    if (payload.document) form.append('document', payload.document);
-    return this.http.post<ApiResponse<LeaveRequest>>(this.apiUrl, form);
+    if (payload.document) form.append('documents[]', payload.document);
+    return this.http.post<ApiResponse<any>>(this.apiUrl, form).pipe(map(res => mapResponse(res, mapRequest)));
   }
 
   cancel(id: number): Observable<ApiResponse<LeaveRequest>> {
@@ -88,6 +97,10 @@ export class RequestService {
       if (req) req.status = 'CANCELLED';
       return of({ success: true, message: 'Solicitud cancelada', data: req! });
     }
-    return this.http.post<ApiResponse<LeaveRequest>>(`${this.apiUrl}/${id}/cancel`, {});
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/cancel`, {}).pipe(map(res => mapResponse(res, mapRequest)));
+  }
+
+  private toBackendStatus(status?: RequestStatus | ''): string {
+    return ({ PENDING: 'PENDIENTE', APPROVED: 'APROBADA', REJECTED: 'RECHAZADA', CANCELLED: 'CANCELADA' } as const)[status as RequestStatus] ?? '';
   }
 }

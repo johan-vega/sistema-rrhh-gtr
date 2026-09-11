@@ -21,6 +21,13 @@ class LaborRequestController extends ApiController
         return $this->success(CategoryResource::collection(RequestCategory::where('active', true)->orderBy('name')->get()));
     }
 
+    public function category(RequestCategory $category)
+    {
+        abort_unless($category->active, 404);
+
+        return $this->success(new CategoryResource($category));
+    }
+
     public function index(Request $request)
     {
         $query = LaborRequest::with('category')->where('worker_id', $request->user()->worker->id)->latest('requested_at');
@@ -48,7 +55,7 @@ class LaborRequestController extends ApiController
         $this->authorize('cancel', $request);
         $this->service->cancel($request->load('category', 'worker.user'), $httpRequest->user(), $httpRequest->validate(['comment' => ['nullable', 'string', 'max:1000']])['comment'] ?? null);
 
-        return $this->success(null, 'Solicitud cancelada correctamente');
+        return $this->success(new LaborRequestResource($request->fresh()->load(['category', 'worker.area', 'worker.position', 'documents', 'histories.user'])), 'Solicitud cancelada correctamente');
     }
 
     public function download(LaborRequest $request, RequestDocument $document)

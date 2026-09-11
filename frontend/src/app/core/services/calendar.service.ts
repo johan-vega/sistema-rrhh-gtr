@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CalendarEvent, ApiResponse } from '../models/index';
+import { apiList, mapCalendarEvent, mapResponse } from '../mappers/api.mappers';
 
 const MOCK_EVENTS: CalendarEvent[] = [
   { id: 1, title: 'Vacaciones', start_date: '2026-09-15', end_date: '2026-09-19', category: 'Vacaciones', status: 'APPROVED' },
@@ -24,12 +25,16 @@ export class CalendarService {
   // Calendario del trabajador (solo sus aprobadas)
   getWorkerEvents(): Observable<ApiResponse<CalendarEvent[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_EVENTS });
-    return this.http.get<ApiResponse<CalendarEvent[]>>(`${this.apiUrl}/calendar`);
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/calendar`).pipe(
+      map(res => mapResponse(res, data => apiList(data).map(mapCalendarEvent))),
+    );
   }
 
   // Calendario RRHH (todos los trabajadores)
   getHrEvents(): Observable<ApiResponse<CalendarEvent[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_HR_EVENTS });
-    return this.http.get<ApiResponse<CalendarEvent[]>>(`${this.apiUrl}/hr/calendar`);
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/hr/calendar`).pipe(
+      map(res => mapResponse(res, data => apiList(data).map(mapCalendarEvent))),
+    );
   }
 }

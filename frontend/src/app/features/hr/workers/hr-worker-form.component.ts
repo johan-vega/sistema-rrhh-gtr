@@ -71,6 +71,15 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
             </div>
           </div>
 
+          @if (!isEdit) {
+            <div class="form-row">
+              <div class="form-group">
+                <label>Contraseña inicial *</label>
+                <input type="password" [(ngModel)]="payload.password" name="password" required minlength="8" autocomplete="new-password" class="input-control" />
+              </div>
+            </div>
+          }
+
           <div class="form-actions">
             <a routerLink="/hr/workers" class="btn-cancel">Cancelar</a>
             <button type="submit" [disabled]="!form.valid || loading" class="btn-submit">

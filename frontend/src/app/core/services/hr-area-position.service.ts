@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Area, Position, ApiResponse } from '../models/index';
+import { apiList, mapResponse } from '../mappers/api.mappers';
 
 const MOCK_AREAS: Area[] = [
   { id: 1, name: 'Producción', active: true },
@@ -28,7 +29,7 @@ export class HrAreaService {
 
   getAll(): Observable<ApiResponse<Area[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_AREAS });
-    return this.http.get<ApiResponse<Area[]>>(this.apiUrl);
+    return this.http.get<ApiResponse<any>>(this.apiUrl).pipe(map(res => mapResponse(res, data => apiList<Area>(data))));
   }
 
   create(name: string): Observable<ApiResponse<Area>> {
@@ -54,7 +55,7 @@ export class HrPositionService {
 
   getAll(): Observable<ApiResponse<Position[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_POSITIONS });
-    return this.http.get<ApiResponse<Position[]>>(this.apiUrl);
+    return this.http.get<ApiResponse<any>>(this.apiUrl).pipe(map(res => mapResponse(res, data => apiList<Position>(data))));
   }
 
   create(name: string): Observable<ApiResponse<Position>> {
