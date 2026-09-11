@@ -7,3 +7,4 @@
 `request_documents` conserva metadatos del archivo privado. `request_histories` registra cada transición y usuario actor. `notifications` usa la tabla estándar de Laravel y `personal_access_tokens` guarda tokens Sanctum.
 
 Las relaciones históricas restringen el borrado. Áreas, puestos, categorías y trabajadores se desactivan mediante `active`.
+tengo que terminar la bd 
