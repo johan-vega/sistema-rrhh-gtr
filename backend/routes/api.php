@@ -12,6 +12,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
     Route::get('categories', [LaborRequestController::class, 'categories']);
+    Route::get('categories/{category}', [LaborRequestController::class, 'category']);
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
     Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);

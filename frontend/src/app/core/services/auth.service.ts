@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, tap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { StorageService } from './storage.service';
 import {
@@ -10,6 +10,33 @@ import {
   AuthResponse,
   ApiResponse,
 } from '../models/index';
+
+interface LaravelWorker {
+  id: number;
+  dni: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  address?: string;
+  phone?: string;
+  active: boolean;
+  area?: User['area'];
+  position?: User['position'];
+}
+
+interface LaravelUser {
+  id: number;
+  name: string;
+  email: string;
+  role: 'RRHH' | 'TRABAJADOR';
+  worker?: LaravelWorker;
+}
+
+interface LaravelAuthResponse {
+  success: boolean;
+  message: string;
+  data: { user: LaravelUser; token: string };
+}
 
 // Datos mock para desarrollo sin backend
 const MOCK_USERS = {
@@ -50,19 +77,33 @@ export class AuthService {
   private storage = inject(StorageService);
   private apiUrl  = environment.apiUrl;
 
-  // Señal reactiva del usuario actual
-  private _currentUser = signal<User | null>(this.storage.getUser<User>());
+  private _currentUser = signal<User | null>(null);
   readonly currentUser  = this._currentUser.asReadonly();
   readonly isAuthenticated = computed(() => !!this._currentUser());
   readonly userRole        = computed(() => this._currentUser()?.role ?? null);
   readonly isWorker        = computed(() => this._currentUser()?.role === 'worker');
   readonly isHr            = computed(() => this._currentUser()?.role === 'hr');
 
-  login(credentials: LoginCredentials): Observable<AuthResponse> {
-    if (environment.useMocks) {
-      return this._mockLogin(credentials);
+  constructor() {
+    const token = this.storage.getToken();
+    const user = this.storage.getUser<User>();
+
+    if (token && user && !token.startsWith('mock-token-')) {
+      this._currentUser.set(user);
+    } else {
+      this.storage.clear();
     }
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
+  }
+
+  login(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.http.post<LaravelAuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
+      map(res => ({
+        ...res,
+        data: {
+          token: res.data.token,
+          user: this._toUser(res.data.user),
+        },
+      })),
       tap(res => {
         if (res.success) this._saveSession(res.data.user, res.data.token);
       }),
@@ -70,21 +111,15 @@ export class AuthService {
   }
 
   logout(): Observable<ApiResponse<null>> {
-    if (environment.useMocks) {
-      this._clearSession();
-      return of({ success: true, message: 'Sesión cerrada', data: null });
-    }
     return this.http.post<ApiResponse<null>>(`${this.apiUrl}/logout`, {}).pipe(
-      tap(() => this._clearSession()),
+      catchError(() => of({ success: true, message: 'Sesión local cerrada', data: null })),
+      finalize(() => this._clearSession()),
     );
   }
 
   me(): Observable<ApiResponse<User>> {
-    if (environment.useMocks) {
-      const user = this._currentUser();
-      return of({ success: true, message: 'OK', data: user! });
-    }
-    return this.http.get<ApiResponse<User>>(`${this.apiUrl}/me`).pipe(
+    return this.http.get<ApiResponse<LaravelUser>>(`${this.apiUrl}/me`).pipe(
+      map(res => ({ ...res, data: this._toUser(res.data) })),
       tap(res => {
         if (res.success) {
           this._currentUser.set(res.data);
@@ -101,16 +136,51 @@ export class AuthService {
     else                   this.router.navigate(['/login'], { replaceUrl: true });
   }
 
+  hasStoredSession(): boolean {
+    return Boolean(this.storage.getToken() && this._currentUser());
+  }
+
+  verifySession(): Observable<boolean> {
+    if (!this.hasStoredSession()) return of(false);
+
+    return this.me().pipe(
+      map(() => true),
+      catchError(() => {
+        this._clearSession(false);
+        return of(false);
+      }),
+    );
+  }
+
   private _saveSession(user: User, token: string): void {
     this.storage.setToken(token);
     this.storage.setUser(user);
     this._currentUser.set(user);
   }
 
-  private _clearSession(): void {
+  private _clearSession(navigate = true): void {
     this.storage.clear();
     this._currentUser.set(null);
-    this.router.navigate(['/login'], { replaceUrl: true });
+    if (navigate) this.router.navigate(['/login'], { replaceUrl: true });
+  }
+
+  private _toUser(user: LaravelUser): User {
+    const worker = user.worker;
+
+    return {
+      id: user.id,
+      name: worker?.first_name ?? user.name,
+      last_name: worker?.last_name ?? '',
+      full_name: worker?.full_name ?? user.name,
+      email: user.email,
+      role: user.role === 'RRHH' ? 'hr' : 'worker',
+      dni: worker?.dni ?? '',
+      area: worker?.area,
+      position: worker?.position,
+      address: worker?.address,
+      phone: worker?.phone,
+      active: worker?.active ?? true,
+    };
   }
 
   // --------------------------------------------------------

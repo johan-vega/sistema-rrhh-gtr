@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   RequestCategory, ApiResponse, HrDashboardStats,
   LeaveRequest, RequestFilters, RejectRequestPayload,
 } from '../models/index';
+import { apiList, mapCategory, mapDashboard, mapRequest, mapResponse } from '../mappers/api.mappers';
 
 // Reutilizamos las mismas solicitudes mock extendidas con info de trabajador
 const MOCK_HR_REQUESTS: LeaveRequest[] = [
@@ -55,7 +56,7 @@ export class HrDashboardService {
 
   getStats(): Observable<ApiResponse<HrDashboardStats>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_DASHBOARD });
-    return this.http.get<ApiResponse<HrDashboardStats>>(`${this.apiUrl}/hr/dashboard`);
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/hr/dashboard`).pipe(map(res => mapResponse(res, mapDashboard)));
   }
 }
 
@@ -66,7 +67,15 @@ export class HrRequestService {
 
   getAll(filters?: RequestFilters): Observable<ApiResponse<LeaveRequest[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_HR_REQUESTS });
-    return this.http.get<ApiResponse<LeaveRequest[]>>(this.apiUrl, { params: filters as any });
+    const params = {
+      category_id: filters?.category_id ?? '',
+      status: this.toBackendStatus(filters?.status),
+      from: filters?.start_date ?? '',
+      to: filters?.end_date ?? '',
+    };
+    return this.http.get<ApiResponse<any>>(this.apiUrl, { params }).pipe(
+      map(res => mapResponse(res, data => apiList(data).map(mapRequest))),
+    );
   }
 
   getById(id: number): Observable<ApiResponse<LeaveRequest>> {
@@ -74,7 +83,7 @@ export class HrRequestService {
       const req = MOCK_HR_REQUESTS.find(r => r.id === id) ?? MOCK_HR_REQUESTS[0];
       return of({ success: true, message: 'OK', data: req });
     }
-    return this.http.get<ApiResponse<LeaveRequest>>(`${this.apiUrl}/${id}`);
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}`).pipe(map(res => mapResponse(res, mapRequest)));
   }
 
   approve(id: number): Observable<ApiResponse<LeaveRequest>> {
@@ -83,7 +92,7 @@ export class HrRequestService {
       req.status = 'APPROVED'; req.response_date = new Date().toISOString().split('T')[0];
       return of({ success: true, message: 'Solicitud aprobada correctamente', data: req });
     }
-    return this.http.post<ApiResponse<LeaveRequest>>(`${this.apiUrl}/${id}/approve`, {});
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/approve`, {}).pipe(map(res => mapResponse(res, mapRequest)));
   }
 
   reject(id: number, payload: RejectRequestPayload): Observable<ApiResponse<LeaveRequest>> {
@@ -92,7 +101,7 @@ export class HrRequestService {
       req.status = 'REJECTED'; req.rrhh_observation = payload.observation;
       return of({ success: true, message: 'Solicitud rechazada', data: req });
     }
-    return this.http.post<ApiResponse<LeaveRequest>>(`${this.apiUrl}/${id}/reject`, payload);
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/reject`, payload).pipe(map(res => mapResponse(res, mapRequest)));
   }
 
   cancel(id: number): Observable<ApiResponse<LeaveRequest>> {
@@ -101,7 +110,12 @@ export class HrRequestService {
       req.status = 'CANCELLED';
       return of({ success: true, message: 'Solicitud cancelada', data: req });
     }
-    return this.http.post<ApiResponse<LeaveRequest>>(`${this.apiUrl}/${id}/cancel`, {});
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/cancel`, {}).pipe(map(res => mapResponse(res, mapRequest)));
+  }
+
+  private toBackendStatus(status?: RequestFilters['status']): string {
+    if (!status) return '';
+    return ({ PENDING: 'PENDIENTE', APPROVED: 'APROBADA', REJECTED: 'RECHAZADA', CANCELLED: 'CANCELADA' } as const)[status];
   }
 }
 
@@ -112,7 +126,9 @@ export class HrCategoryService {
 
   getAll(): Observable<ApiResponse<RequestCategory[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_HR_CATEGORIES });
-    return this.http.get<ApiResponse<RequestCategory[]>>(this.apiUrl);
+    return this.http.get<ApiResponse<any>>(this.apiUrl).pipe(
+      map(res => mapResponse(res, data => apiList(data).map(mapCategory))),
+    );
   }
 
   getById(id: number): Observable<ApiResponse<RequestCategory>> {
@@ -120,7 +136,7 @@ export class HrCategoryService {
       const cat = MOCK_HR_CATEGORIES.find(c => c.id === id) ?? MOCK_HR_CATEGORIES[0];
       return of({ success: true, message: 'OK', data: cat });
     }
-    return this.http.get<ApiResponse<RequestCategory>>(`${this.apiUrl}/${id}`);
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}`).pipe(map(res => mapResponse(res, mapCategory)));
   }
 
   save(payload: Partial<RequestCategory>, id?: number): Observable<ApiResponse<RequestCategory>> {
@@ -128,12 +144,17 @@ export class HrCategoryService {
       const cat = { id: id ?? Date.now(), name: '', requires_document: false, minimum_advance_days: 0, active: true, ...payload } as RequestCategory;
       return of({ success: true, message: id ? 'Categoría actualizada' : 'Categoría creada', data: cat });
     }
-    if (id) return this.http.put<ApiResponse<RequestCategory>>(`${this.apiUrl}/${id}`, payload);
-    return this.http.post<ApiResponse<RequestCategory>>(this.apiUrl, payload);
+    const body = {
+      ...payload,
+      minimum_notice_days: payload.minimum_advance_days ?? 0,
+      requires_document: payload.requires_document ?? false,
+    };
+    if (id) return this.http.put<ApiResponse<any>>(`${this.apiUrl}/${id}`, body).pipe(map(res => mapResponse(res, mapCategory)));
+    return this.http.post<ApiResponse<any>>(this.apiUrl, body).pipe(map(res => mapResponse(res, mapCategory)));
   }
 
   toggleStatus(id: number, active: boolean): Observable<ApiResponse<RequestCategory>> {
     if (environment.useMocks) return of({ success: true, message: 'Estado actualizado', data: { id, name: '', requires_document: false, minimum_advance_days: 0, active } });
-    return this.http.patch<ApiResponse<RequestCategory>>(`${this.apiUrl}/${id}/status`, { active });
+    return this.http.patch<ApiResponse<any>>(`${this.apiUrl}/${id}/status`, { active }).pipe(map(res => mapResponse(res, mapCategory)));
   }
 }

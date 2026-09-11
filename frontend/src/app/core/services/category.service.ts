@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { RequestCategory, ApiResponse } from '../models/index';
+import { apiList, mapCategory, mapResponse } from '../mappers/api.mappers';
 
 const MOCK_CATEGORIES: RequestCategory[] = [
   { id: 1, name: 'Vacaciones', description: 'Solicitud de días de vacaciones anuales', requires_document: false, minimum_advance_days: 15, active: true },
@@ -19,7 +20,9 @@ export class CategoryService {
 
   getAll(): Observable<ApiResponse<RequestCategory[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_CATEGORIES });
-    return this.http.get<ApiResponse<RequestCategory[]>>(this.apiUrl);
+    return this.http.get<ApiResponse<any>>(this.apiUrl).pipe(
+      map(res => mapResponse(res, data => apiList(data).map(mapCategory))),
+    );
   }
 
   getById(id: number): Observable<ApiResponse<RequestCategory>> {
@@ -27,6 +30,8 @@ export class CategoryService {
       const cat = MOCK_CATEGORIES.find(c => c.id === id) ?? MOCK_CATEGORIES[0];
       return of({ success: true, message: 'OK', data: cat });
     }
-    return this.http.get<ApiResponse<RequestCategory>>(`${this.apiUrl}/${id}`);
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}`).pipe(
+      map(res => mapResponse(res, mapCategory)),
+    );
   }
 }

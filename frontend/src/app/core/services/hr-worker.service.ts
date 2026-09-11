@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Worker, CreateWorkerPayload, UpdateWorkerPayload, ApiResponse,
 } from '../models/index';
+import { apiList, mapResponse, mapWorker } from '../mappers/api.mappers';
 
 const MOCK_WORKERS: Worker[] = [
   { id: 1, name: 'Juan', last_name: 'Pérez García', full_name: 'Juan Pérez García', email: 'juan@empresa.com', dni: '12345678', area: { id: 1, name: 'Producción', active: true }, position: { id: 1, name: 'Operario', active: true }, address: 'Av. Los Pinos 123', phone: '987654321', active: true },
@@ -20,7 +21,9 @@ export class HrWorkerService {
 
   getAll(): Observable<ApiResponse<Worker[]>> {
     if (environment.useMocks) return of({ success: true, message: 'OK', data: MOCK_WORKERS });
-    return this.http.get<ApiResponse<Worker[]>>(this.apiUrl);
+    return this.http.get<ApiResponse<any>>(this.apiUrl).pipe(
+      map(res => mapResponse(res, data => apiList(data).map(mapWorker))),
+    );
   }
 
   getById(id: number): Observable<ApiResponse<Worker>> {
@@ -28,7 +31,7 @@ export class HrWorkerService {
       const w = MOCK_WORKERS.find(w => w.id === id) ?? MOCK_WORKERS[0];
       return of({ success: true, message: 'OK', data: w });
     }
-    return this.http.get<ApiResponse<Worker>>(`${this.apiUrl}/${id}`);
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}`).pipe(map(res => mapResponse(res, mapWorker)));
   }
 
   create(payload: CreateWorkerPayload): Observable<ApiResponse<Worker>> {
@@ -36,7 +39,7 @@ export class HrWorkerService {
       const newW: Worker = { id: Date.now(), ...payload, full_name: `${payload.name} ${payload.last_name}`, active: true };
       return of({ success: true, message: 'Trabajador creado correctamente', data: newW });
     }
-    return this.http.post<ApiResponse<Worker>>(this.apiUrl, payload);
+    return this.http.post<ApiResponse<any>>(this.apiUrl, this.toBackendPayload(payload, true)).pipe(map(res => mapResponse(res, mapWorker)));
   }
 
   update(id: number, payload: UpdateWorkerPayload): Observable<ApiResponse<Worker>> {
@@ -44,7 +47,7 @@ export class HrWorkerService {
       const w = MOCK_WORKERS.find(w => w.id === id) ?? MOCK_WORKERS[0];
       return of({ success: true, message: 'Trabajador actualizado', data: { ...w, ...payload } });
     }
-    return this.http.put<ApiResponse<Worker>>(`${this.apiUrl}/${id}`, payload);
+    return this.http.put<ApiResponse<any>>(`${this.apiUrl}/${id}`, this.toBackendPayload(payload)).pipe(map(res => mapResponse(res, mapWorker)));
   }
 
   toggleStatus(id: number, active: boolean): Observable<ApiResponse<Worker>> {
@@ -53,6 +56,16 @@ export class HrWorkerService {
       w.active = active;
       return of({ success: true, message: `Trabajador ${active ? 'activado' : 'desactivado'}`, data: w });
     }
-    return this.http.patch<ApiResponse<Worker>>(`${this.apiUrl}/${id}/status`, { active });
+    return this.http.patch<ApiResponse<any>>(`${this.apiUrl}/${id}/status`, { active }).pipe(map(res => mapResponse(res, mapWorker)));
+  }
+
+  private toBackendPayload(payload: CreateWorkerPayload | UpdateWorkerPayload, creating = false): Record<string, unknown> {
+    const { name, last_name, ...rest } = payload;
+    return {
+      ...rest,
+      first_name: name,
+      last_name,
+      ...(creating ? { password_confirmation: (payload as CreateWorkerPayload).password } : {}),
+    };
   }
 }

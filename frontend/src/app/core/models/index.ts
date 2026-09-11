@@ -170,7 +170,7 @@ export interface CalendarEvent {
 // =====================================================
 
 export interface AppNotification {
-  id: number;
+  id: string | number;
   title: string;
   message: string;
   read: boolean;

@@ -4,6 +4,8 @@
 
 Consulte [docs/backend.md](docs/backend.md), [docs/api.md](docs/api.md), [docs/database.md](docs/database.md) y [docs/business-rules.md](docs/business-rules.md).
 
+La configuración local usa MySQL/MariaDB con la base `sistema_gtr`; configure las credenciales `DB_*` de acuerdo con su instalación antes de ejecutar migraciones.
+
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>

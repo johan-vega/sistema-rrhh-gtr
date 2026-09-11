@@ -28,7 +28,21 @@ class HrController extends ApiController
 
     public function dashboard()
     {
-        return $this->success(['pending_requests' => LaborRequest::where('status', RequestStatus::PENDING)->count(), 'active_workers' => Worker::where('active', true)->count(), 'requests_this_month' => LaborRequest::whereBetween('requested_at', [now()->startOfMonth(), now()->endOfMonth()])->count()]);
+        $recent = LaborRequest::with(['category', 'worker.area', 'worker.position'])
+            ->where('status', RequestStatus::PENDING)
+            ->latest('requested_at')
+            ->limit(5)
+            ->get();
+
+        return $this->success([
+            'pending' => LaborRequest::where('status', RequestStatus::PENDING)->count(),
+            'approved' => LaborRequest::where('status', RequestStatus::APPROVED)->count(),
+            'rejected' => LaborRequest::where('status', RequestStatus::REJECTED)->count(),
+            'cancelled' => LaborRequest::where('status', RequestStatus::CANCELLED)->count(),
+            'active_workers' => Worker::where('active', true)->count(),
+            'requests_this_month' => LaborRequest::whereBetween('requested_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+            'recent_requests' => LaborRequestResource::collection($recent)->resolve(request()),
+        ]);
     }
 
     public function workers(Request $request)
@@ -178,7 +192,7 @@ class HrController extends ApiController
         $data = $httpRequest->validate(['observation' => ['nullable', 'string', 'max:2000']]);
         $this->service->respond($request->load(['worker.user']), $httpRequest->user(), true, $data['observation'] ?? '');
 
-        return $this->success(null, 'Solicitud aprobada correctamente');
+        return $this->success(new LaborRequestResource($request->fresh()->load(['category', 'worker.area', 'worker.position', 'documents', 'histories.user'])), 'Solicitud aprobada correctamente');
     }
 
     public function reject(Request $httpRequest, LaborRequest $request)
@@ -186,7 +200,7 @@ class HrController extends ApiController
         $data = $httpRequest->validate(['observation' => ['required', 'string', 'max:2000']]);
         $this->service->respond($request->load(['worker.user']), $httpRequest->user(), false, $data['observation']);
 
-        return $this->success(null, 'Solicitud rechazada correctamente');
+        return $this->success(new LaborRequestResource($request->fresh()->load(['category', 'worker.area', 'worker.position', 'documents', 'histories.user'])), 'Solicitud rechazada correctamente');
     }
 
     public function cancelRequest(Request $httpRequest, LaborRequest $request)
@@ -194,12 +208,12 @@ class HrController extends ApiController
         $data = $httpRequest->validate(['comment' => ['nullable', 'string', 'max:1000']]);
         $this->service->cancel($request->load(['category', 'worker.user']), $httpRequest->user(), $data['comment'] ?? null);
 
-        return $this->success(null, 'Solicitud cancelada correctamente');
+        return $this->success(new LaborRequestResource($request->fresh()->load(['category', 'worker.area', 'worker.position', 'documents', 'histories.user'])), 'Solicitud cancelada correctamente');
     }
 
     public function calendar(Request $request)
     {
-        $q = LaborRequest::with(['category', 'worker.area', 'worker.position'])->where('status', RequestStatus::APPROVED)->when($request->query('worker_id'), fn ($q, $id) => $q->where('worker_id', $id))->when($request->query('area_id'), fn ($q, $id) => $q->whereHas('worker', fn ($w) => $w->where('area_id', $id)))->when($request->query('category_id'), fn ($q, $id) => $q->where('category_id', $id))->when($request->query('from'), fn ($q, $d) => $q->whereDate('end_date','>=',$d))->when($request->query('to'),fn ($q,$d) => $q->whereDate('start_date','<=',$d));
+        $q = LaborRequest::with(['category', 'worker.area', 'worker.position'])->where('status', RequestStatus::APPROVED)->when($request->query('worker_id'), fn ($q, $id) => $q->where('worker_id', $id))->when($request->query('area_id'), fn ($q, $id) => $q->whereHas('worker', fn ($w) => $w->where('area_id', $id)))->when($request->query('category_id'), fn ($q, $id) => $q->where('category_id', $id))->when($request->query('from'), fn ($q, $d) => $q->whereDate('end_date', '>=', $d))->when($request->query('to'), fn ($q, $d) => $q->whereDate('start_date', '<=', $d));
 
         return $this->success(LaborRequestResource::collection($q->orderBy('start_date')->get()));
     }
