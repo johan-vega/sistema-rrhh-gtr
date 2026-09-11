@@ -1,13 +1,13 @@
 /* ============================================================
-   SISTEMA RRHH — Industrial Plastics Corporate Design System
-   Modern Corporate | Inter font | Slate & Industrial Cyan
+  SISTEMA RRHH — Industrial Plastics Corporate Design System
+  Modern Corporate | Inter font | Slate & Industrial Cyan
    ============================================================ */
 
 /* Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ============================================================
-   CSS CUSTOM PROPERTIES (Tokens)
+  CSS CUSTOM PROPERTIES (Tokens)
    ============================================================ */
 :root {
   /* Colors — Corporate Industrial Plastics Palette */
@@ -52,13 +52,20 @@
 
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-size-xs: 0.75rem;    /* 12px */
-  --font-size-sm: 0.875rem;   /* 14px */
-  --font-size-base: 1rem;     /* 16px */
-  --font-size-lg: 1.125rem;   /* 18px */
-  --font-size-xl: 1.25rem;    /* 20px */
-  --font-size-2xl: 1.5rem;    /* 24px */
-  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-xs: 0.75rem;
+  /* 12px */
+  --font-size-sm: 0.875rem;
+  /* 14px */
+  --font-size-base: 1rem;
+  /* 16px */
+  --font-size-lg: 1.125rem;
+  /* 18px */
+  --font-size-xl: 1.25rem;
+  /* 20px */
+  --font-size-2xl: 1.5rem;
+  /* 24px */
+  --font-size-3xl: 1.875rem;
+  /* 30px */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -102,7 +109,9 @@
   --content-max-width: 900px;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -130,17 +139,29 @@ a {
   color: var(--color-accent);
   text-decoration: none;
   transition: color var(--transition-fast);
-  &:hover { color: var(--color-accent-hover); }
+
+  &:hover {
+    color: var(--color-accent-hover);
+  }
 }
 
-img, svg { display: block; max-width: 100%; }
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
 
-input, textarea, select, button {
+input,
+textarea,
+select,
+button {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
 }
 
-button { cursor: pointer; }
+button {
+  cursor: pointer;
+}
 
 /* Buttons */
 .btn {
@@ -159,7 +180,11 @@ button { cursor: pointer; }
   text-decoration: none;
   white-space: nowrap;
 
-  &:disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
 }
 
 .btn-primary {
@@ -167,31 +192,48 @@ button { cursor: pointer; }
   color: var(--color-text-inverse);
   box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
 
-  &:hover { background: var(--color-accent-hover); transform: translateY(-1px); }
+  &:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+  }
 }
 
 .btn-secondary {
   background: var(--color-surface);
   color: var(--color-text-primary);
   border: 1.5px solid var(--color-border);
-  &:hover { background: var(--color-surface-2); border-color: var(--color-accent); }
+
+  &:hover {
+    background: var(--color-surface-2);
+    border-color: var(--color-accent);
+  }
 }
 
 .btn-danger {
   background: var(--color-rejected);
   color: var(--color-text-inverse);
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
-  &:hover { background: #DC2626; transform: translateY(-1px); }
+
+  &:hover {
+    background: #DC2626;
+    transform: translateY(-1px);
+  }
 }
 
 .btn-success {
   background: var(--color-approved);
   color: var(--color-text-inverse);
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-  &:hover { background: #059669; transform: translateY(-1px); }
+
+  &:hover {
+    background: #059669;
+    transform: translateY(-1px);
+  }
 }
 
-.btn-full { width: 100%; }
+.btn-full {
+  width: 100%;
+}
 
 /* Form controls */
 .form-group {
@@ -244,7 +286,9 @@ button { cursor: pointer; }
   justify-content: space-between;
 }
 
-.card-body { padding: var(--space-6); }
+.card-body {
+  padding: var(--space-6);
+}
 
 /* Details List */
 .detail-list {
@@ -326,7 +370,10 @@ button { cursor: pointer; }
   max-width: var(--content-max-width);
   margin: 0 auto;
   padding: var(--space-4);
-  @media (min-width: 768px) { padding: var(--space-6); }
+
+  @media (min-width: 768px) {
+    padding: var(--space-6);
+  }
 }
 
 .page-title {
@@ -346,4 +393,8 @@ button { cursor: pointer; }
   animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
