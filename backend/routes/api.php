@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HrController;
+use App\Http\Controllers\HrProfileController;
 use App\Http\Controllers\LaborRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -27,6 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('calendar', [LaborRequestController::class, 'calendar']);
     });
     Route::prefix('hr')->middleware('hr')->group(function () {
+        Route::get('profile', [HrProfileController::class, 'show']);
+        Route::put('profile', [HrProfileController::class, 'update']);
         Route::get('dashboard', [HrController::class, 'dashboard']);
         Route::get('workers', [HrController::class, 'workers']);
         Route::post('workers', [HrController::class, 'storeWorker']);

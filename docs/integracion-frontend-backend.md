@@ -72,6 +72,7 @@ Laravel permite CORS para `http://localhost:4200` y `http://127.0.0.1:4200`. Ang
 | Calendario trabajador | `GET /calendar` |
 | Notificaciones | `GET /notifications`, `POST /notifications/{id}/read`, `POST /notifications/read-all` |
 | Dashboard RRHH | `GET /hr/dashboard` |
+| Perfil de RRHH | `GET/PUT /hr/profile` |
 | Trabajadores | `/hr/workers` y cambio de estado |
 | Áreas y puestos | `/hr/areas`, `/hr/positions` y cambio de estado |
 | Categorías RRHH | `/hr/categories` y cambio de estado |
@@ -81,15 +82,33 @@ Laravel permite CORS para `http://localhost:4200` y `http://127.0.0.1:4200`. Ang
 
 Los adaptadores están en `frontend/src/app/core/mappers/api.mappers.ts`. Convierten los nombres y estados de Laravel (por ejemplo, `APROBADA`) al formato ya usado por Angular (`APPROVED`), evitando cambios visuales.
 
-## Sesiones y cierre de sesión
+## Sesiones, acceso inicial y cierre de sesión
 
 Angular valida la sesión guardada con `GET /api/me` antes de permitir una ruta protegida. Tokens vencidos, inválidos o heredados de la fase de mocks se eliminan y el usuario vuelve a `/login`.
 
-El cierre de sesión siempre borra token y usuario del navegador, aun cuando el servidor local esté detenido o la llamada a `POST /api/logout` falle. De ese modo ya no puede quedar un dashboard abierto por una sesión obsoleta.
+La ruta raíz (`/`) y la pantalla `/login` siempre presentan el formulario de acceso, incluso si quedó una sesión del navegador. Ya no redirigen automáticamente al dashboard al abrir el servidor para una prueba.
+
+El formulario ofrece **Mantener sesión iniciada en este dispositivo**. Si no se marca, la sesión se guarda únicamente durante la pestaña actual (`sessionStorage`) y se pierde al cerrar el navegador. Si se marca, se conserva en ese navegador (`localStorage`) y permite acceder otra vez a una ruta privada hasta cerrar sesión o invalidar el token. Esta opción no evita que la ruta inicial muestre el login.
+
+El cierre de sesión siempre borra token y usuario de ambos almacenamientos, aun cuando el servidor local esté detenido o la llamada a `POST /api/logout` falle.
+
+## Perfil de RRHH
+
+En el menú de RRHH está **Mi perfil**. La cuenta puede modificar su nombre, correo y contraseña. Para cambiar la contraseña la API exige la contraseña actual, una nueva clave de al menos ocho caracteres y su confirmación.
+
+## PWA, instalación y notificaciones
+
+La aplicación ya incluye manifiesto, `Service Worker` de Angular y el botón **Descargar aplicación** en el inicio. El navegador solo habilita ese botón cuando la aplicación cumple sus condiciones: producción con HTTPS (o `localhost`), manifiesto válido y Service Worker activo. Después de ejecutar `npm run build`, publicar el contenido de `frontend/dist/frontend/browser/` en HTTPS.
+
+El usuario de RRHH ve dentro de su menú la pregunta para permitir notificaciones. Tras aceptarla, el portal consulta notificaciones nuevas cada 30 segundos y muestra un aviso del navegador por cada solicitud nueva mientras el portal o la PWA están abiertos. Para recibir avisos con la aplicación completamente cerrada hace falta un servicio de **Web Push** (suscripción/VAPID y un proveedor push) en el servidor; no es una capacidad que el navegador otorgue sin esa infraestructura.
+
+Los navegadores no permiten a una página web pedir acceso global para “administrar archivos”. Por seguridad, el sistema solicita al usuario elegir cada archivo al adjuntar un sustento; el navegador concede acceso únicamente a los archivos seleccionados y Laravel los guarda de forma privada.
+
+El logo temporal está en `frontend/public/assets/logo-generico-gtr.png`. Para usar el logo oficial, reemplácelo por un PNG cuadrado con el mismo nombre; `frontend/public/assets/README.md` describe la ruta.
 
 ## Reglas de trabajo
 
-- El token se guarda localmente en el navegador; no debe subirse al repositorio.
+- Los tokens de sesión se guardan en el almacenamiento del navegador; no deben subirse al repositorio.
 - Los documentos se guardan privados en Laravel y se descargan únicamente por endpoints autorizados.
 - RRHH crea usuarios trabajadores desde el módulo de trabajadores y debe asignar una contraseña inicial de al menos ocho caracteres.
 - No modificar el esquema directamente en producción: crear una migración Laravel para cada cambio.

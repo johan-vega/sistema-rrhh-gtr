@@ -145,6 +145,22 @@
   gap: 0.2rem;
 }
 
+.notification-consent {
+  margin: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: var(--radius-md);
+  color: rgba(255,255,255,0.88);
+  font-size: 0.75rem;
+
+  strong { display: block; font-size: 0.8rem; }
+  p { margin: 0.3rem 0 0.55rem; color: rgba(255,255,255,0.62); line-height: 1.35; }
+  button {
+    width: 100%; padding: 0.38rem 0.55rem; border: 0; border-radius: var(--radius-sm);
+    background: var(--color-accent); color: white; font: inherit; font-weight: 700;
+  }
+}
+
 .nav-item {
   display: flex;
   align-items: center;
