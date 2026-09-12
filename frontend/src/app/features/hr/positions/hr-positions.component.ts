@@ -163,6 +163,23 @@ import { Position } from '../../../core/models/index';
       &.edit { color: #2e86de; border-color: #93c5fd; }
       &.toggle { color: #64748b; }
     }
+    @media (max-width: 600px) {
+      .positions-container { padding: 1rem; }
+      .input-row { flex-direction: column; }
+      .input-control, .btn-primary, .btn-secondary { width: 100%; flex: none; }
+      .table-card { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+      .positions-table, .positions-table tbody, .positions-table tr, .positions-table td { display: block; width: 100%; }
+      .positions-table thead { display: none; }
+      .positions-table tr { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 3px 12px rgba(0,0,0,.03); margin-bottom: .75rem; overflow: hidden; }
+      .positions-table td { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .72rem .9rem; }
+      .positions-table td::before { color: #64748b; content: attr(data-label); font-size: .75rem; font-weight: 800; }
+      .positions-table td:nth-child(1)::before { content: 'ID'; }
+      .positions-table td:nth-child(2)::before { content: 'Cargo'; }
+      .positions-table td:nth-child(3)::before { content: 'Estado'; }
+      .positions-table td:nth-child(4)::before { content: 'Acciones'; }
+      .actions-cell { display: grid !important; grid-template-columns: 1fr 1fr; }
+      .btn-action { width: 100%; padding: .6rem .4rem; white-space: nowrap; }
+    }
   `]
 })
 export class HrPositionsComponent implements OnInit {

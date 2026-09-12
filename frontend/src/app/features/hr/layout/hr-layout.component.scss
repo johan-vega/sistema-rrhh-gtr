@@ -1,6 +1,7 @@
 .hr-shell {
   min-height: 100vh;
   background: var(--color-bg);
+  overflow-x: clip;
 }
 
 /* Overlay */
@@ -16,8 +17,11 @@
 
 /* Topbar */
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: var(--z-topbar);
   background: #0f172a;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -48,6 +52,10 @@
 
 .topbar-title {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 800;
   color: white;
   font-size: 0.9rem;
@@ -198,7 +206,10 @@
 .logout-btn { color: rgba(255,255,255,0.6); }
 
 .main-content {
+  padding-top: var(--topbar-height);
+
   @media (min-width: 1024px) {
     margin-left: var(--sidebar-width);
+    padding-top: 0;
   }
 }

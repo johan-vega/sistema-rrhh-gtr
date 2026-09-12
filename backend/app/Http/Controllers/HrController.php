@@ -19,6 +19,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Worker;
 use App\Services\LaborRequestService;
+use App\Services\RequestReportExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -96,14 +97,14 @@ class HrController extends ApiController
 
     public function storeArea(ManageResourceRequest $request)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:150', 'unique:areas,name'], 'description' => ['nullable', 'string', 'max:1000'], 'active' => ['sometimes', 'boolean']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:150', 'unique:areas,name'], 'description' => ['nullable', 'string', 'max:1000'], 'monthly_permission_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'monthly_absence_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'active' => ['sometimes', 'boolean']]);
 
         return $this->success(new AreaResource(Area::create($data)), 'Área creada correctamente', 201);
     }
 
     public function updateArea(ManageResourceRequest $request, Area $area)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:150', "unique:areas,name,{$area->id}"], 'description' => ['nullable', 'string', 'max:1000']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:150', "unique:areas,name,{$area->id}"], 'description' => ['nullable', 'string', 'max:1000'], 'monthly_permission_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'monthly_absence_limit' => ['nullable', 'integer', 'min:0', 'max:365']]);
         $area->update($data);
 
         return $this->success(new AreaResource($area), 'Área actualizada correctamente');
@@ -150,7 +151,7 @@ class HrController extends ApiController
 
     public function storeCategory(ManageResourceRequest $request)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:150', 'unique:request_categories,name'], 'description' => ['nullable', 'string', 'max:1000'], 'requires_document' => ['required', 'boolean'], 'minimum_notice_days' => ['required', 'integer', 'min:0', 'max:365'], 'allow_approved_cancellation' => ['sometimes', 'boolean'], 'active' => ['sometimes', 'boolean']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:150', 'unique:request_categories,name'], 'description' => ['nullable', 'string', 'max:1000'], 'requires_document' => ['required', 'boolean'], 'minimum_notice_days' => ['required', 'integer', 'min:0', 'max:365'], 'allow_approved_cancellation' => ['sometimes', 'boolean'], 'is_absence' => ['sometimes', 'boolean'], 'active' => ['sometimes', 'boolean']]);
 
         return $this->success(new CategoryResource(RequestCategory::create($data)), 'Categoría creada correctamente', 201);
     }
@@ -162,7 +163,7 @@ class HrController extends ApiController
 
     public function updateCategory(ManageResourceRequest $request, RequestCategory $category)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:150', "unique:request_categories,name,{$category->id}"], 'description' => ['nullable', 'string', 'max:1000'], 'requires_document' => ['required', 'boolean'], 'minimum_notice_days' => ['required', 'integer', 'min:0', 'max:365'], 'allow_approved_cancellation' => ['sometimes', 'boolean']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:150', "unique:request_categories,name,{$category->id}"], 'description' => ['nullable', 'string', 'max:1000'], 'requires_document' => ['required', 'boolean'], 'minimum_notice_days' => ['required', 'integer', 'min:0', 'max:365'], 'allow_approved_cancellation' => ['sometimes', 'boolean'], 'is_absence' => ['sometimes', 'boolean']]);
         $category->update($data);
 
         return $this->success(new CategoryResource($category), 'Categoría actualizada correctamente');
@@ -216,5 +217,74 @@ class HrController extends ApiController
         $q = LaborRequest::with(['category', 'worker.area', 'worker.position'])->where('status', RequestStatus::APPROVED)->when($request->query('worker_id'), fn ($q, $id) => $q->where('worker_id', $id))->when($request->query('area_id'), fn ($q, $id) => $q->whereHas('worker', fn ($w) => $w->where('area_id', $id)))->when($request->query('category_id'), fn ($q, $id) => $q->where('category_id', $id))->when($request->query('from'), fn ($q, $d) => $q->whereDate('end_date', '>=', $d))->when($request->query('to'), fn ($q, $d) => $q->whereDate('start_date', '<=', $d));
 
         return $this->success(LaborRequestResource::collection($q->orderBy('start_date')->get()));
+    }
+
+    public function report(Request $request)
+    {
+        $filters = $this->reportFilters($request);
+        $items = $this->reportQuery($filters)->orderBy('requested_at')->get();
+
+        return $this->success([
+            'summary' => $this->reportSummary($items),
+            'items' => LaborRequestResource::collection($items)->resolve($request),
+        ]);
+    }
+
+    public function exportReport(Request $request, RequestReportExportService $exporter)
+    {
+        $filters = $this->reportFilters($request);
+        return $exporter->download($this->reportQuery($filters)->orderBy('requested_at')->get(), $filters);
+    }
+
+    public function requestAnalytics(Request $request)
+    {
+        $filters = $this->reportFilters($request);
+        $items = $this->reportQuery($filters)->get();
+        $approved = $items->filter(fn (LaborRequest $item) => $item->status === RequestStatus::APPROVED)->count();
+        $rejected = $items->filter(fn (LaborRequest $item) => $item->status === RequestStatus::REJECTED)->count();
+
+        return $this->success([
+            'total' => $approved + $rejected,
+            'approved' => $approved,
+            'rejected' => $rejected,
+            'series' => [
+                ['label' => 'Aprobadas', 'value' => $approved, 'color' => '#10B981'],
+                ['label' => 'Rechazadas', 'value' => $rejected, 'color' => '#EF4444'],
+            ],
+        ]);
+    }
+
+    private function reportFilters(Request $request): array
+    {
+        return $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'worker_id' => ['nullable', 'integer', 'exists:workers,id'],
+            'area_id' => ['nullable', 'integer', 'exists:areas,id'],
+            'category_id' => ['nullable', 'integer', 'exists:request_categories,id'],
+            'status' => ['nullable', 'in:PENDIENTE,APROBADA,RECHAZADA,CANCELADA'],
+        ]);
+    }
+
+    private function reportQuery(array $filters)
+    {
+        return LaborRequest::with(['category', 'worker.user', 'worker.area', 'worker.position'])
+            ->when($filters['worker_id'] ?? null, fn ($q, $id) => $q->where('worker_id', $id))
+            ->when($filters['area_id'] ?? null, fn ($q, $id) => $q->whereHas('worker', fn ($worker) => $worker->where('area_id', $id)))
+            ->when($filters['category_id'] ?? null, fn ($q, $id) => $q->where('category_id', $id))
+            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($filters['from'] ?? null, fn ($q, $from) => $q->whereDate('end_date', '>=', $from))
+            ->when($filters['to'] ?? null, fn ($q, $to) => $q->whereDate('start_date', '<=', $to));
+    }
+
+    private function reportSummary($items): array
+    {
+        return [
+            'total' => $items->count(),
+            'pending' => $items->filter(fn (LaborRequest $item) => $item->status === RequestStatus::PENDING)->count(),
+            'approved' => $items->filter(fn (LaborRequest $item) => $item->status === RequestStatus::APPROVED)->count(),
+            'rejected' => $items->filter(fn (LaborRequest $item) => $item->status === RequestStatus::REJECTED)->count(),
+            'cancelled' => $items->filter(fn (LaborRequest $item) => $item->status === RequestStatus::CANCELLED)->count(),
+        ];
     }
 }

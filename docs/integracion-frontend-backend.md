@@ -78,9 +78,22 @@ Laravel permite CORS para `http://localhost:4200` y `http://127.0.0.1:4200`. Ang
 | Categorías RRHH | `/hr/categories` y cambio de estado |
 | Solicitudes RRHH | `/hr/requests`, detalle, aprobar, rechazar y cancelar |
 | Calendario RRHH | `GET /hr/calendar` |
+| Reportes RRHH | `GET /hr/reports/requests` y `GET /hr/reports/requests/export` |
 | Notificaciones RRHH | `GET /hr/notifications` |
 
 Los adaptadores están en `frontend/src/app/core/mappers/api.mappers.ts`. Convierten los nombres y estados de Laravel (por ejemplo, `APROBADA`) al formato ya usado por Angular (`APPROVED`), evitando cambios visuales.
+
+## Reportes de RRHH y Excel
+
+El menú **Reportes** muestra inicialmente todo el historial y permite consultar solicitudes por rango de fechas, trabajador, motivo y estado. Los botones **Mes actual** y **Todo el historial** establecen esos rangos rápidamente. La consulta considera solicitudes que se crucen con el período elegido, incluso si empezaron antes o terminan después de sus límites.
+
+**Exportar Excel** descarga el mismo conjunto filtrado en formato `.xlsx`, con una hoja **Resumen** y otra **Solicitudes**. El archivo se genera en Laravel y solo puede solicitarlo un usuario con rol RRHH; el navegador no recibe acceso directo a la base de datos.
+
+## Topes mensuales y analítica
+
+En **Áreas de Planta** y al crear o editar un trabajador, RRHH puede definir topes mensuales separados para **permisos** y **faltas**. Un valor vacío o `0` no aplica tope. Una categoría se marca como **falta** desde **Categorías**; las demás se contabilizan como permisos. Al registrar una solicitud, el sistema bloquea la creación si el trabajador o su área ya alcanzaron el máximo de ese mes; las solicitudes rechazadas y canceladas no consumen cupo.
+
+El dashboard de RRHH incluye una gráfica de **solicitudes aprobadas y rechazadas** con filtros de rango, área y trabajador. Permite alternar entre barras y circular. El rango de esta gráfica usa las fechas del permiso o descanso solicitado, por lo que representa los eventos comprendidos en el período elegido.
 
 ## Sesiones, acceso inicial y cierre de sesión
 

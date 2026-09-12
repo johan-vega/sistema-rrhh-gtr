@@ -71,6 +71,17 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
             </div>
           </div>
 
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tope mensual de permisos</label>
+              <input type="number" [(ngModel)]="payload.monthly_permission_limit" name="monthly_permission_limit" min="0" placeholder="Vacío = sin tope" class="input-control" />
+            </div>
+            <div class="form-group">
+              <label>Tope mensual de faltas</label>
+              <input type="number" [(ngModel)]="payload.monthly_absence_limit" name="monthly_absence_limit" min="0" placeholder="Vacío = sin tope" class="input-control" />
+            </div>
+          </div>
+
           @if (!isEdit) {
             <div class="form-row">
               <div class="form-group">
@@ -211,7 +222,9 @@ export class HrWorkerFormComponent implements OnInit {
           area_id: w.area?.id ?? 1,
           position_id: w.position?.id ?? 1,
           phone: w.phone ?? '',
-          address: w.address ?? ''
+          address: w.address ?? '',
+          monthly_permission_limit: w.monthly_permission_limit ?? null,
+          monthly_absence_limit: w.monthly_absence_limit ?? null,
         };
       }
     });

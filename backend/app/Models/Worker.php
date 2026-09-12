@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Worker extends Model
 {
-    protected $fillable = ['user_id', 'dni', 'first_name', 'last_name', 'area_id', 'position_id', 'address', 'phone', 'active'];
+    protected $fillable = ['user_id', 'dni', 'first_name', 'last_name', 'area_id', 'position_id', 'address', 'phone', 'monthly_permission_limit', 'monthly_absence_limit', 'active'];
 
     protected function casts(): array
     {
-        return ['active' => 'boolean'];
+        return ['active' => 'boolean', 'monthly_permission_limit' => 'integer', 'monthly_absence_limit' => 'integer'];
     }
 
     public function user()

@@ -45,6 +45,9 @@ export interface ProfileUpdatePayload {
 export interface Area {
   id: number;
   name: string;
+  description?: string;
+  monthly_permission_limit?: number | null;
+  monthly_absence_limit?: number | null;
   active: boolean;
 }
 
@@ -64,6 +67,7 @@ export interface RequestCategory {
   description?: string;
   requires_document: boolean;
   minimum_advance_days: number;
+  is_absence?: boolean;
   active: boolean;
 }
 
@@ -124,6 +128,8 @@ export interface Worker {
   position?: Position;
   address?: string;
   phone?: string;
+  monthly_permission_limit?: number | null;
+  monthly_absence_limit?: number | null;
   active: boolean;
   created_at?: string;
 }
@@ -137,6 +143,8 @@ export interface CreateWorkerPayload {
   position_id: number;
   address?: string;
   phone?: string;
+  monthly_permission_limit?: number | null;
+  monthly_absence_limit?: number | null;
   password: string;
 }
 
@@ -149,6 +157,8 @@ export interface UpdateWorkerPayload {
   position_id?: number;
   address?: string;
   phone?: string;
+  monthly_permission_limit?: number | null;
+  monthly_absence_limit?: number | null;
 }
 
 // =====================================================
@@ -221,4 +231,37 @@ export interface RequestFilters {
   status?: RequestStatus | '';
   start_date?: string;
   end_date?: string;
+}
+
+// =====================================================
+// REPORTES DE RRHH
+// =====================================================
+
+export interface HrReportSummary {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  cancelled: number;
+}
+
+export interface HrRequestReport {
+  summary: HrReportSummary;
+  items: LeaveRequest[];
+}
+
+export interface HrReportFilters {
+  from?: string;
+  to?: string;
+  worker_id?: number | '';
+  area_id?: number | '';
+  category_id?: number | '';
+  status?: RequestStatus | '';
+}
+
+export interface HrRequestAnalytics {
+  total: number;
+  approved: number;
+  rejected: number;
+  series: Array<{ label: string; value: number; color: string }>;
 }

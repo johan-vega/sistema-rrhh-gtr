@@ -1,7 +1,7 @@
 <div class="page-container">
   <h1 class="page-title">Mi Calendario</h1>
   <p class="page-subtitle" style="color:var(--color-text-muted); margin-bottom:1.5rem; font-size:var(--font-size-sm)">
-    Solo se muestran tus solicitudes aprobadas.
+    Consulta el estado de tus solicitudes por fecha.
   </p>
 
   <div class="card">
@@ -23,9 +23,13 @@
           @if (day) {
             <span class="day-number" [class.today-num]="isToday(day)">{{ day }}</span>
             @for (ev of getEventsForDay(day); track ev.id) {
-              <div class="cal-event" [style.background]="getColor(ev.category)" [title]="ev.category">
-                <span class="event-label">{{ ev.category }}</span>
-              </div>
+              <span
+                class="status-mark"
+                [class.approved]="ev.status === 'APPROVED'"
+                [class.rejected]="ev.status === 'REJECTED'"
+                [title]="ev.status === 'APPROVED' ? 'Solicitud aprobada' : 'Solicitud rechazada'"
+                [attr.aria-label]="ev.status === 'APPROVED' ? 'Solicitud aprobada' : 'Solicitud rechazada'"
+              ></span>
             }
           }
         </div>
@@ -34,19 +38,19 @@
   </div>
 
   <!-- Leyenda -->
-  @if (events().length > 0) {
-    <div class="legend card" style="margin-top:1rem">
-      <div class="card-body" style="padding:1rem">
-        <p class="legend-title">Leyenda</p>
-        <div class="legend-items">
-          @for (ev of events(); track ev.id) {
-            <div class="legend-item">
-              <span class="legend-dot" [style.background]="getColor(ev.category)"></span>
-              <span class="legend-text">{{ ev.category }} · {{ ev.start_date === ev.end_date ? ev.start_date : ev.start_date + ' → ' + ev.end_date }}</span>
-            </div>
-          }
+  <div class="legend card" style="margin-top:1rem">
+    <div class="card-body" style="padding:1rem">
+      <p class="legend-title">Leyenda</p>
+      <div class="legend-items">
+        <div class="legend-item">
+          <span class="legend-dot approved"></span>
+          <span class="legend-text">Solicitud aprobada</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot rejected"></span>
+          <span class="legend-text">Solicitud rechazada</span>
         </div>
       </div>
     </div>
-  }
+  </div>
 </div>
