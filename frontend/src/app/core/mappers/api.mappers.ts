@@ -31,6 +31,7 @@ export function mapCategory(category: any): RequestCategory {
     description: category.description ?? undefined,
     requires_document: Boolean(category.requires_document),
     minimum_advance_days: category.minimum_notice_days ?? category.minimum_advance_days ?? 0,
+    is_absence: Boolean(category.is_absence),
     active: Boolean(category.active),
   };
 }
@@ -47,6 +48,8 @@ export function mapWorker(worker: any): Worker {
     position: worker.position,
     address: worker.address ?? undefined,
     phone: worker.phone ?? undefined,
+    monthly_permission_limit: worker.monthly_permission_limit ?? null,
+    monthly_absence_limit: worker.monthly_absence_limit ?? null,
     active: Boolean(worker.active),
     created_at: worker.created_at ?? undefined,
   };

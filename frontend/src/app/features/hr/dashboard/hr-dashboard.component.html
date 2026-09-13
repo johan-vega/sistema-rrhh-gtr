@@ -33,7 +33,41 @@
       <a routerLink="/hr/workers/new" class="btn btn-secondary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Nuevo trabajador
       </a>
+      <a routerLink="/hr/reports" class="btn btn-secondary">
+        Ver reportes
+      </a>
     </div>
+
+    <section class="analytics-card card" aria-label="Análisis de solicitudes aprobadas y rechazadas">
+      <div class="analytics-heading">
+        <div><h2 class="section-title">Solicitudes aprobadas y rechazadas</h2><p>Decisiones de permisos comprendidos en el período seleccionado.</p></div>
+        <div class="chart-toggle" role="group" aria-label="Tipo de gráfica">
+          <button type="button" [class.active]="chartType() === 'bar'" (click)="setChart('bar')">Barras</button>
+          <button type="button" [class.active]="chartType() === 'pie'" (click)="setChart('pie')">Circular</button>
+        </div>
+      </div>
+      <form [formGroup]="analyticsForm" (ngSubmit)="loadAnalytics()" class="analytics-filters">
+        <input type="date" formControlName="from" aria-label="Fecha inicial" />
+        <input type="date" formControlName="to" aria-label="Fecha final" />
+        <select formControlName="category_id" aria-label="Motivo"><option value="">Todos los motivos</option>@for (category of categories(); track category.id) { <option [value]="category.id">{{ category.name }}</option> }</select>
+        <select formControlName="worker_id" aria-label="Trabajador"><option value="">Todos los trabajadores</option>@for (worker of workers(); track worker.id) { <option [value]="worker.id">{{ worker.full_name }}</option> }</select>
+        <button type="submit" class="btn btn-primary" [disabled]="analyticsLoading()">Actualizar</button>
+      </form>
+      @if (analyticsLoading()) { <app-loading-spinner /> } @else if (analytics(); as chart) {
+        <div class="chart-body" [class.pie-mode]="chartType() === 'pie'">
+          @if (chartType() === 'bar') {
+            <div class="bar-chart">
+              @for (item of chart.series; track item.label) {
+                <div class="bar-column"><strong>{{ item.value }}</strong><div class="bar-track"><span [style.height.%]="barPercent(item.value)" [style.background]="item.color"></span></div><small>{{ item.label }}</small></div>
+              }
+            </div>
+          } @else {
+            <div class="pie-chart" [style.background]="pieStyle()"><span>{{ chart.total }}</span></div>
+            <div class="chart-legend">@for (item of chart.series; track item.label) { <p><i [style.background]="item.color"></i>{{ item.label }}: <strong>{{ item.value }}</strong></p> }</div>
+          }
+        </div>
+      }
+    </section>
 
     <!-- Solicitudes pendientes recientes -->
     <section>

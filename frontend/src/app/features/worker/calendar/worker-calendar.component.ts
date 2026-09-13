@@ -1,15 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
-import { CalendarService } from '../../../core/services/calendar.service';
-import { CalendarEvent } from '../../../core/models/index';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'Vacaciones':            '#2E86DE',
-  'Salud':                 '#E74C3C',
-  'Motivo personal':       '#F39C12',
-  'Justificación de falta':'#8E44AD',
-  'Licencia':              '#27AE60',
-};
+import { RequestService } from '../../../core/services/request.service';
+import { LeaveRequest } from '../../../core/models/index';
 
 @Component({
   selector: 'app-worker-calendar',
@@ -18,9 +10,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   styleUrl: './worker-calendar.component.scss',
 })
 export class WorkerCalendarComponent implements OnInit {
-  private svc = inject(CalendarService);
+  private svc = inject(RequestService);
 
-  events     = signal<CalendarEvent[]>([]);
+  events     = signal<LeaveRequest[]>([]);
   loading    = signal(true);
   today      = new Date();
   currentDate= signal(new Date());
@@ -42,7 +34,7 @@ export class WorkerCalendarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.svc.getWorkerEvents().subscribe({
+    this.svc.getAll().subscribe({
       next: res => { this.events.set(res.data ?? []); this.loading.set(false); },
       error: ()  => this.loading.set(false),
     });
@@ -60,11 +52,12 @@ export class WorkerCalendarComponent implements OnInit {
     this.currentDate.set(d);
   }
 
-  getEventsForDay(day: number): CalendarEvent[] {
+  getEventsForDay(day: number): LeaveRequest[] {
     const dateStr = `${this.year}-${String(this.month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    return this.events().filter(e => {
-      return dateStr >= e.start_date && dateStr <= e.end_date;
-    });
+    return this.events().filter(e =>
+      (e.status === 'APPROVED' || e.status === 'REJECTED') &&
+      dateStr >= e.start_date && dateStr <= e.end_date,
+    );
   }
 
   isToday(day: number): boolean {
@@ -72,7 +65,4 @@ export class WorkerCalendarComponent implements OnInit {
     return t.getFullYear() === this.year && t.getMonth() === this.month && t.getDate() === day;
   }
 
-  getColor(cat: string): string {
-    return CATEGORY_COLORS[cat] ?? '#6B7280';
-  }
 }

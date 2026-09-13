@@ -38,6 +38,10 @@ import { RequestCategory } from '../../../core/models/index';
               <input type="checkbox" [(ngModel)]="category.requires_document" />
               ¿Requiere Adjuntar Documento Obligatorio?
             </label>
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="category.is_absence" />
+              Clasificar como falta para topes y gráficas
+            </label>
           </div>
         </div>
 
@@ -241,6 +245,7 @@ export class HrCategoriesComponent implements OnInit {
     name: '',
     description: '',
     requires_document: false,
+    is_absence: false,
     minimum_advance_days: 0,
   };
 
@@ -275,6 +280,7 @@ export class HrCategoriesComponent implements OnInit {
       name: '',
       description: '',
       requires_document: false,
+      is_absence: false,
       minimum_advance_days: 0,
     };
   }

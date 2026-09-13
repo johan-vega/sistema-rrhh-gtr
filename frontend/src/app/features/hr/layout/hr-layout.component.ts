@@ -30,6 +30,7 @@ export class HrLayoutComponent implements OnInit {
     { path: '/hr/dashboard',     id: 'dashboard', label: 'Dashboard' },
     { path: '/hr/requests',      id: 'requests', label: 'Solicitudes' },
     { path: '/hr/calendar',      id: 'calendar', label: 'Calendario General' },
+    { path: '/hr/reports',       id: 'reports', label: 'Reportes' },
     { path: '/hr/workers',       id: 'workers', label: 'Trabajadores' },
     { path: '/hr/areas',         id: 'areas', label: 'Áreas de Planta' },
     { path: '/hr/positions',     id: 'positions', label: 'Cargos Laborales' },

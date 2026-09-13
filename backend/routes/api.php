@@ -56,6 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('requests/{request}/reject', [HrController::class, 'reject']);
         Route::post('requests/{request}/cancel', [HrController::class, 'cancelRequest']);
         Route::get('calendar', [HrController::class, 'calendar']);
+        Route::get('reports/requests', [HrController::class, 'report']);
+        Route::get('reports/requests/export', [HrController::class, 'exportReport']);
+        Route::get('analytics/requests', [HrController::class, 'requestAnalytics']);
         Route::get('notifications', [NotificationController::class, 'index']);
     });
 });

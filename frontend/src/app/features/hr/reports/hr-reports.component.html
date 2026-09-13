@@ -1,0 +1,115 @@
+<div class="page-container reports-page">
+  <div class="page-heading">
+    <div>
+      <h1 class="page-title">Reportes de solicitudes</h1>
+      <p class="page-subtitle">Consulta y exporta la información de permisos, licencias y vacaciones.</p>
+    </div>
+  </div>
+
+  <section class="card filters-card" aria-label="Filtros del reporte">
+    <form [formGroup]="filterForm" (ngSubmit)="load()">
+      <div class="filter-grid">
+        <label class="form-group">
+          <span>Desde</span>
+          <input type="date" formControlName="from" />
+        </label>
+        <label class="form-group">
+          <span>Hasta</span>
+          <input type="date" formControlName="to" />
+        </label>
+        <label class="form-group">
+          <span>Trabajador</span>
+          <select formControlName="worker_id">
+            <option value="">Todos los trabajadores</option>
+            @for (worker of workers(); track worker.id) {
+              <option [value]="worker.id">{{ worker.full_name }}</option>
+            }
+          </select>
+        </label>
+        <label class="form-group">
+          <span>Área</span>
+          <select formControlName="area_id">
+            <option value="">Todas las áreas</option>
+            @for (area of areas(); track area.id) {
+              <option [value]="area.id">{{ area.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="form-group">
+          <span>Motivo</span>
+          <select formControlName="category_id">
+            <option value="">Todos los motivos</option>
+            @for (category of categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="form-group">
+          <span>Estado</span>
+          <select formControlName="status">
+            <option value="">Todos los estados</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="APPROVED">Aprobada</option>
+            <option value="REJECTED">Rechazada</option>
+            <option value="CANCELLED">Cancelada</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="btn btn-secondary" (click)="useAllHistory()">Todo el historial</button>
+        <button type="button" class="btn btn-secondary" (click)="useCurrentMonth()">Mes actual</button>
+        <button type="submit" class="btn btn-primary" [disabled]="loading()">Aplicar filtros</button>
+        <button type="button" class="btn btn-excel" (click)="exportExcel()" [disabled]="exporting()">
+          {{ exporting() ? 'Preparando archivo…' : 'Exportar Excel' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  @if (error()) {
+    <p class="report-error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else if (report(); as data) {
+    <section class="summary-grid" aria-label="Resumen de solicitudes">
+      <article class="stat-card total"><strong>{{ data.summary.total }}</strong><span>Total</span></article>
+      <article class="stat-card pending"><strong>{{ data.summary.pending }}</strong><span>Pendientes</span></article>
+      <article class="stat-card approved"><strong>{{ data.summary.approved }}</strong><span>Aprobadas</span></article>
+      <article class="stat-card rejected"><strong>{{ data.summary.rejected }}</strong><span>Rechazadas</span></article>
+      <article class="stat-card cancelled"><strong>{{ data.summary.cancelled }}</strong><span>Canceladas</span></article>
+    </section>
+
+    <section class="card details-card">
+      <div class="details-title">
+        <div>
+          <h2>Detalle del reporte</h2>
+          <p>{{ data.items.length }} solicitud(es) con los filtros seleccionados.</p>
+        </div>
+      </div>
+
+      @if (data.items.length === 0) {
+        <app-empty-state icon="📊" title="No hay solicitudes para este filtro" subtitle="Prueba con otro rango de fechas o modifica los filtros." />
+      } @else {
+        <div class="report-table-wrap">
+          <table class="report-table">
+            <thead><tr><th>Trabajador</th><th>Motivo</th><th>Periodo</th><th>Estado</th><th>Solicitada</th></tr></thead>
+            <tbody>
+              @for (item of data.items; track item.id) {
+                <tr>
+                  <td><strong>{{ item.employee?.full_name ?? 'Trabajador' }}</strong><small>{{ item.employee?.area?.name ?? 'Sin área' }}</small></td>
+                  <td>{{ item.category.name }}</td>
+                  <td>{{ formatDate(item.start_date) }}<br><small>al {{ formatDate(item.end_date) }}</small></td>
+                  <td><app-status-badge [status]="item.status" /></td>
+                  <td>{{ formatDate(item.request_date) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { NotificationService } from '../../../core/services/notification.service';
 import { AppNotification } from '../../../core/models/index';
 
@@ -22,6 +23,12 @@ import { AppNotification } from '../../../core/models/index';
           *ngFor="let n of notifications()" 
           class="notif-card"
           [class.read]="n.read"
+          [class.clickable]="!!n.request_id"
+          [attr.role]="n.request_id ? 'button' : null"
+          [attr.tabindex]="n.request_id ? 0 : null"
+          (click)="openNotification(n)"
+          (keydown.enter)="openNotification(n)"
+          (keydown.space)="openNotification(n); $event.preventDefault()"
         >
           <div class="notif-icon">
             
@@ -77,6 +84,8 @@ import { AppNotification } from '../../../core/models/index';
       border: 1px solid #e2e8f0;
       box-shadow: 0 4px 16px rgba(0,0,0,0.03);
       &.read { opacity: 0.7; background: #f8fafc; }
+      &.clickable { cursor: pointer; transition: transform var(--transition-fast), box-shadow var(--transition-fast); }
+      &.clickable:hover, &.clickable:focus-visible { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,23,42,.08); outline: 2px solid var(--color-accent); outline-offset: 2px; }
     }
     .notif-icon {
       width: 40px;
@@ -100,10 +109,20 @@ import { AppNotification } from '../../../core/models/index';
       h4 { margin: 0; font-size: 0.95rem; font-weight: 800; color: #1e293b; }
       .time-text { font-size: 0.75rem; color: #94a3b8; }
     }
+    @media (max-width: 599px) {
+      .notif-container { padding: 1rem; }
+      .header-section { align-items: stretch; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+      .header-section h2 { font-size: 1.25rem; }
+      .btn-read { width: 100%; }
+      .notif-card { gap: 0.75rem; padding: 0.9rem; }
+      .notif-icon { width: 34px; height: 34px; flex-basis: 34px; }
+      .notif-header { align-items: flex-start; flex-direction: column; gap: 0.15rem; }
+    }
   `]
 })
 export class HrNotificationsComponent implements OnInit {
   private notifService = inject(NotificationService);
+  private router = inject(Router);
 
   notifications = signal<AppNotification[]>([]);
 
@@ -117,5 +136,15 @@ export class HrNotificationsComponent implements OnInit {
     this.notifService.markAllRead().subscribe(() => {
       this.notifications.update(list => list.map(n => ({ ...n, read: true })));
     });
+  }
+
+  openNotification(notification: AppNotification): void {
+    if (!notification.request_id) return;
+    if (!notification.read) {
+      this.notifService.markRead(notification.id).subscribe(() => {
+        this.notifications.update(list => list.map(item => item.id === notification.id ? { ...item, read: true } : item));
+      });
+    }
+    this.router.navigate(['/hr/requests', notification.request_id]);
   }
 }

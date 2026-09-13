@@ -32,14 +32,14 @@ export class HrAreaService {
     return this.http.get<ApiResponse<any>>(this.apiUrl).pipe(map(res => mapResponse(res, data => apiList<Area>(data))));
   }
 
-  create(name: string): Observable<ApiResponse<Area>> {
-    if (environment.useMocks) return of({ success: true, message: 'Área creada', data: { id: Date.now(), name, active: true } });
-    return this.http.post<ApiResponse<Area>>(this.apiUrl, { name });
+  create(payload: Pick<Area, 'name'> & Partial<Area>): Observable<ApiResponse<Area>> {
+    if (environment.useMocks) return of({ success: true, message: 'Área creada', data: { id: Date.now(), active: true, ...payload } });
+    return this.http.post<ApiResponse<Area>>(this.apiUrl, payload);
   }
 
-  update(id: number, name: string): Observable<ApiResponse<Area>> {
-    if (environment.useMocks) return of({ success: true, message: 'Área actualizada', data: { id, name, active: true } });
-    return this.http.put<ApiResponse<Area>>(`${this.apiUrl}/${id}`, { name });
+  update(id: number, payload: Pick<Area, 'name'> & Partial<Area>): Observable<ApiResponse<Area>> {
+    if (environment.useMocks) return of({ success: true, message: 'Área actualizada', data: { id, active: true, ...payload } });
+    return this.http.put<ApiResponse<Area>>(`${this.apiUrl}/${id}`, payload);
   }
 
   toggleStatus(id: number, active: boolean): Observable<ApiResponse<Area>> {

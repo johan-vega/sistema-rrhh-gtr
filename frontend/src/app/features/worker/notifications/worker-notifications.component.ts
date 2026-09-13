@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NotificationService } from '../../../core/services/notification.service';
 import { AppNotification } from '../../../core/models/index';
 import { LoadingSpinnerComponent, EmptyStateComponent } from '../../../shared/components/ui.components';
@@ -25,7 +25,7 @@ import { LoadingSpinnerComponent, EmptyStateComponent } from '../../../shared/co
       } @else {
         <div class="list-container">
           @for (n of notifications(); track n.id) {
-            <div class="notif-card card" [class.unread]="!n.read" (click)="markRead(n)">
+            <div class="notif-card card" [class.unread]="!n.read" [class.clickable]="!!n.request_id" (click)="openNotification(n)" (keydown.enter)="openNotification(n)" [attr.role]="n.request_id ? 'button' : null" [attr.tabindex]="n.request_id ? 0 : null">
               <div class="card-body" style="padding:1rem 1.25rem">
                 <div class="notif-header">
                   <span class="notif-title">{{ n.title }}</span>
@@ -34,7 +34,7 @@ import { LoadingSpinnerComponent, EmptyStateComponent } from '../../../shared/co
                 <p class="notif-message">{{ n.message }}</p>
                 <p class="notif-time">{{ formatTime(n.created_at) }}</p>
                 @if (n.request_id) {
-                  <a [routerLink]="['/worker/requests', n.request_id]" class="btn btn-ghost btn-sm" style="margin-top:0.5rem">
+                  <a [routerLink]="['/worker/requests', n.request_id]" (click)="$event.stopPropagation()" class="btn btn-ghost btn-sm" style="margin-top:0.5rem">
                     Ver solicitud →
                   </a>
                 }
@@ -47,17 +47,24 @@ import { LoadingSpinnerComponent, EmptyStateComponent } from '../../../shared/co
   `,
   styles: [`
     .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; .page-title { margin-bottom: 0; } }
-    .notif-card { cursor: pointer; transition: all var(--transition-fast); &:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); } }
+    .notif-card { transition: all var(--transition-fast); }
+    .notif-card.clickable { cursor: pointer; &:hover, &:focus-visible { transform: translateY(-1px); box-shadow: var(--shadow-md); outline: 2px solid var(--color-accent); outline-offset: 2px; } }
     .notif-card.unread { border-left: 4px solid var(--color-accent); }
     .notif-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.375rem; }
     .notif-title { font-weight: var(--font-weight-semibold); }
     .notif-badge { background: var(--color-accent); color: white; font-size: var(--font-size-xs); padding: 0.1rem 0.5rem; border-radius: var(--radius-full); }
     .notif-message { font-size: var(--font-size-sm); color: var(--color-text-secondary); line-height: 1.5; }
     .notif-time { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 0.375rem; }
+    @media (max-width: 420px) {
+      .page-header { align-items: flex-start; flex-direction: column; gap: 0.75rem; }
+      .page-header .btn { width: 100%; }
+      .notif-header { align-items: flex-start; flex-direction: column; gap: 0.25rem; }
+    }
   `],
 })
 export class WorkerNotificationsComponent implements OnInit {
   private svc = inject(NotificationService);
+  private router = inject(Router);
 
   loading       = signal(true);
   notifications = signal<AppNotification[]>([]);
@@ -75,6 +82,11 @@ export class WorkerNotificationsComponent implements OnInit {
     this.svc.markRead(n.id).subscribe(() => {
       this.notifications.update(list => list.map(x => x.id === n.id ? { ...x, read: true } : x));
     });
+  }
+
+  openNotification(n: AppNotification): void {
+    this.markRead(n);
+    if (n.request_id) this.router.navigate(['/worker/requests', n.request_id]);
   }
 
   markAllRead(): void {

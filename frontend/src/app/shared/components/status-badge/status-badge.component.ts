@@ -8,6 +8,8 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; css: string; icon: s
   CANCELLED: { label: 'CANCELADA',   css: 'badge-cancelled', icon: '' },
 };
 
+const UNKNOWN_STATUS = { label: 'SIN ESTADO', css: 'badge-cancelled', icon: '' };
+
 @Component({
   selector: 'app-status-badge',
   template: `
@@ -20,5 +22,5 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; css: string; icon: s
 })
 export class StatusBadgeComponent {
   status = input.required<RequestStatus>();
-  config = () => STATUS_CONFIG[this.status()];
+  config = () => STATUS_CONFIG[this.status()] ?? UNKNOWN_STATUS;
 }

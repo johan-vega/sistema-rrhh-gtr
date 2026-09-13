@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\RequestStatus;
 use App\Models\Area;
 use App\Models\LaborRequest;
+use App\Models\RequestDocument;
 use App\Models\Position;
 use App\Models\RequestCategory;
 use App\Models\Role;
@@ -76,6 +77,18 @@ class LaborRequestApiTest extends TestCase
         Sanctum::actingAs($user);
         $this->post('/api/requests', array_merge($this->payload($category), ['documents' => [UploadedFile::fake()->create('certificado.pdf', 100, 'application/pdf')]]), ['Accept' => 'application/json'])->assertCreated();
         $this->assertDatabaseCount('request_documents', 1);
+    }
+
+    public function test_document_download_requires_authentication_without_redirecting_to_login(): void
+    {
+        $user = $this->worker();
+        $category = $this->category();
+        $request = LaborRequest::create(['worker_id' => $user->worker->id, 'category_id' => $category->id, 'start_date' => today(), 'end_date' => today(), 'reason' => 'x', 'status' => RequestStatus::PENDING, 'requested_at' => now()]);
+        $document = RequestDocument::create(['labor_request_id' => $request->id, 'original_name' => 'sustento.pdf', 'stored_name' => 'sustento.pdf', 'path' => 'request-documents/test/sustento.pdf', 'mime_type' => 'application/pdf', 'size' => 1]);
+
+        $this->get("/api/requests/{$request->id}/documents/{$document->id}")
+            ->assertUnauthorized()
+            ->assertJsonPath('message', 'No autenticado');
     }
 
     public function test_minimum_notice_is_enforced(): void
@@ -161,5 +174,102 @@ class LaborRequestApiTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['role_id' => $hr->id]));
 
         $this->getJson('/api/hr/requests')->assertOk()->assertJsonCount(2, 'data');
+    }
+
+    public function test_hr_can_filter_and_export_request_report(): void
+    {
+        $worker = $this->worker();
+        $category = $this->category(['name' => 'Vacaciones']);
+        $matching = LaborRequest::create([
+            'worker_id' => $worker->worker->id,
+            'category_id' => $category->id,
+            'start_date' => '2026-09-10',
+            'end_date' => '2026-09-12',
+            'reason' => 'Descanso anual',
+            'status' => RequestStatus::APPROVED,
+            'requested_at' => '2026-09-01 08:00:00',
+        ]);
+        LaborRequest::create([
+            'worker_id' => $worker->worker->id,
+            'category_id' => $category->id,
+            'start_date' => '2026-10-10',
+            'end_date' => '2026-10-11',
+            'reason' => 'Otro periodo',
+            'status' => RequestStatus::PENDING,
+            'requested_at' => '2026-10-01 08:00:00',
+        ]);
+        [$hr] = $this->roles();
+        Sanctum::actingAs(User::factory()->create(['role_id' => $hr->id]));
+
+        $query = '?from=2026-09-01&to=2026-09-30&worker_id='.$worker->worker->id.'&category_id='.$category->id.'&status=APROBADA';
+        $this->getJson('/api/hr/reports/requests'.$query)
+            ->assertOk()
+            ->assertJsonPath('data.summary.total', 1)
+            ->assertJsonPath('data.summary.approved', 1)
+            ->assertJsonPath('data.items.0.id', $matching->id);
+
+        $response = $this->get('/api/hr/reports/requests/export'.$query);
+        $response->assertOk()->assertDownload();
+        $file = $response->baseResponse->getFile()->getPathname();
+        $this->assertSame('PK', file_get_contents($file, false, null, 0, 2));
+        $zip = new \ZipArchive;
+        $zip->open($file);
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        $this->assertStringContainsString('Trabajador', $sheet);
+        $this->assertStringContainsString('Periodo', $sheet);
+        $this->assertStringContainsString('Solicitada', $sheet);
+        $this->assertStringContainsString('width="34"', $sheet);
+    }
+
+    public function test_monthly_worker_and_area_limits_block_new_permission_requests(): void
+    {
+        $first = $this->worker();
+        $category = $this->category();
+        $first->worker->update(['monthly_permission_limit' => 1]);
+        Sanctum::actingAs($first);
+        $this->postJson('/api/requests', $this->payload($category))->assertCreated();
+        $this->postJson('/api/requests', $this->payload($category, ['end_date' => today()->addDays(5)->toDateString()]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('start_date');
+
+        $first->worker->update(['monthly_permission_limit' => null]);
+        $first->worker->area->update(['monthly_permission_limit' => 1]);
+        $second = $this->worker('area-limit@test.com');
+        Sanctum::actingAs($second);
+        $this->postJson('/api/requests', $this->payload($category))->assertUnprocessable()->assertJsonValidationErrors('start_date');
+    }
+
+    public function test_hr_can_get_approved_and_rejected_request_analytics(): void
+    {
+        $worker = $this->worker();
+        $categories = [$this->category(['name' => 'Permiso']), $this->category(['name' => 'Justificación'])];
+        foreach ($categories as $index => $category) {
+            LaborRequest::create([
+                'worker_id' => $worker->worker->id,
+                'category_id' => $category->id,
+                'start_date' => '2026-09-10',
+                'end_date' => '2026-09-10',
+                'reason' => 'Prueba',
+                'status' => $index === 0 ? RequestStatus::APPROVED : RequestStatus::REJECTED,
+                'requested_at' => '2026-09-01 08:00:00',
+            ]);
+        }
+        [$hr] = $this->roles();
+        Sanctum::actingAs(User::factory()->create(['role_id' => $hr->id]));
+
+        $this->getJson('/api/hr/analytics/requests?from=2026-09-01&to=2026-09-30&worker_id='.$worker->worker->id)
+            ->assertOk()
+            ->assertJsonPath('data.total', 2)
+            ->assertJsonPath('data.approved', 1)
+            ->assertJsonPath('data.rejected', 1);
+
+        $this->getJson('/api/hr/analytics/requests?from=2026-08-01&to=2026-08-31&worker_id='.$worker->worker->id)
+            ->assertOk()
+            ->assertJsonPath('data.total', 0);
+
+        $this->getJson('/api/hr/analytics/requests?from=2026-09-10&to=2026-09-10&worker_id='.$worker->worker->id)
+            ->assertOk()
+            ->assertJsonPath('data.total', 2);
     }
 }

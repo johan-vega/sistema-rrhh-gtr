@@ -12,7 +12,7 @@ import { Area } from '../../../core/models/index';
     <div class="areas-container">
       <div class="header-section">
         <h2>Gestión de Áreas</h2>
-        <p>Administra los departamentos o áreas de la empresa de plásticos.</p>
+        <p>Administra las áreas y sus topes mensuales de permisos y faltas.</p>
       </div>
 
       <div class="add-card">
@@ -24,6 +24,8 @@ import { Area } from '../../../core/models/index';
             placeholder="Ej: Calidad, Empaque, Inyección..." 
             class="input-control" 
           />
+          <input type="number" [(ngModel)]="permissionLimit" min="0" placeholder="Tope permisos" class="input-control limit-input" title="0 o vacío: sin tope" />
+          <input type="number" [(ngModel)]="absenceLimit" min="0" placeholder="Tope faltas" class="input-control limit-input" title="0 o vacío: sin tope" />
           <button (click)="saveArea()" [disabled]="!areaName.trim()" class="btn-primary">
             {{ editingArea ? 'Actualizar' : 'Agregar' }}
           </button>
@@ -38,6 +40,7 @@ import { Area } from '../../../core/models/index';
               <th>ID</th>
               <th>Nombre del Área</th>
               <th>Estado</th>
+              <th>Topes mensuales</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -50,6 +53,7 @@ import { Area } from '../../../core/models/index';
                   {{ area.active ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
+              <td>Permisos: {{ limitLabel(area.monthly_permission_limit) }}<br>Faltas: {{ limitLabel(area.monthly_absence_limit) }}</td>
               <td class="actions-cell">
                 <button (click)="startEdit(area)" class="btn-action edit">Editar</button>
                 <button (click)="toggleStatus(area)" class="btn-action toggle">
@@ -95,6 +99,7 @@ import { Area } from '../../../core/models/index';
       outline: none;
       &:focus { border-color: #2e86de; }
     }
+    .limit-input { max-width: 145px; }
     .btn-primary {
       background: #1e3a5f;
       color: #fff;
@@ -163,6 +168,24 @@ import { Area } from '../../../core/models/index';
       &.edit { color: #2e86de; border-color: #93c5fd; }
       &.toggle { color: #64748b; }
     }
+    @media (max-width: 600px) {
+      .areas-container { padding: 1rem; }
+      .input-row { flex-direction: column; }
+      .input-control, .limit-input, .btn-primary, .btn-secondary { width: 100%; max-width: none; flex: none; }
+      .table-card { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+      .areas-table, .areas-table tbody, .areas-table tr, .areas-table td { display: block; width: 100%; }
+      .areas-table thead { display: none; }
+      .areas-table tr { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 3px 12px rgba(0,0,0,.03); margin-bottom: .75rem; overflow: hidden; }
+      .areas-table td { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .72rem .9rem; }
+      .areas-table td::before { color: #64748b; content: attr(data-label); font-size: .75rem; font-weight: 800; }
+      .areas-table td:nth-child(1)::before { content: 'ID'; }
+      .areas-table td:nth-child(2)::before { content: 'Área'; }
+      .areas-table td:nth-child(3)::before { content: 'Estado'; }
+      .areas-table td:nth-child(4)::before { content: 'Topes'; }
+      .areas-table td:nth-child(5)::before { content: 'Acciones'; }
+      .actions-cell { display: grid !important; grid-template-columns: 1fr 1fr; }
+      .btn-action { width: 100%; padding: .6rem .4rem; white-space: nowrap; }
+    }
   `]
 })
 export class HrAreasComponent implements OnInit {
@@ -170,6 +193,8 @@ export class HrAreasComponent implements OnInit {
 
   areas = signal<Area[]>([]);
   areaName = '';
+  permissionLimit: number | null = null;
+  absenceLimit: number | null = null;
   editingArea: Area | null = null;
 
   ngOnInit(): void {
@@ -185,14 +210,14 @@ export class HrAreasComponent implements OnInit {
   saveArea(): void {
     if (!this.areaName.trim()) return;
     if (this.editingArea) {
-      this.areaService.update(this.editingArea.id, this.areaName.trim()).subscribe(res => {
+      this.areaService.update(this.editingArea.id, this.areaPayload()).subscribe(res => {
         if (res.success) {
-          this.editingArea!.name = this.areaName.trim();
+          Object.assign(this.editingArea!, res.data);
           this.cancelEdit();
         }
       });
     } else {
-      this.areaService.create(this.areaName.trim()).subscribe(res => {
+      this.areaService.create(this.areaPayload()).subscribe(res => {
         if (res.success && res.data) {
           this.areas.update(list => [...list, res.data]);
           this.areaName = '';
@@ -204,11 +229,15 @@ export class HrAreasComponent implements OnInit {
   startEdit(area: Area): void {
     this.editingArea = area;
     this.areaName = area.name;
+    this.permissionLimit = area.monthly_permission_limit ?? null;
+    this.absenceLimit = area.monthly_absence_limit ?? null;
   }
 
   cancelEdit(): void {
     this.editingArea = null;
     this.areaName = '';
+    this.permissionLimit = null;
+    this.absenceLimit = null;
   }
 
   toggleStatus(area: Area): void {
@@ -217,5 +246,15 @@ export class HrAreasComponent implements OnInit {
         area.active = !area.active;
       }
     });
+  }
+
+  limitLabel(value?: number | null): string { return value ? String(value) : 'Sin tope'; }
+
+  private areaPayload(): Pick<Area, 'name'> & Partial<Area> {
+    return {
+      name: this.areaName.trim(),
+      monthly_permission_limit: this.permissionLimit || null,
+      monthly_absence_limit: this.absenceLimit || null,
+    };
   }
 }

@@ -10,7 +10,9 @@
   align-items: center;
   gap: 0.25rem;
 
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .dates-row {
@@ -18,7 +20,23 @@
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 
-  @media (max-width: 360px) { grid-template-columns: 1fr; }
+  @media (max-width: 360px) {
+    grid-template-columns: 1fr;
+  }
 }
 
-.category-info { margin-bottom: 0.75rem; }
+.category-info {
+  margin-bottom: 0.75rem;
+}
+
+.alert.alert-warning {
+  margin-bottom: 1rem;
+  font-size: var(--font-size-m);
+  color: var(--color-error);
+}
+
+.form-error {
+  font-size: var(--font-size-m);
+  color: var(--color-error);
+  margin-top: 0.25rem;
+}
