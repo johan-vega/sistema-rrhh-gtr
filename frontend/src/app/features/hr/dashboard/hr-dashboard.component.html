@@ -49,7 +49,7 @@
       <form [formGroup]="analyticsForm" (ngSubmit)="loadAnalytics()" class="analytics-filters">
         <input type="date" formControlName="from" aria-label="Fecha inicial" />
         <input type="date" formControlName="to" aria-label="Fecha final" />
-        <select formControlName="area_id" aria-label="Área"><option value="">Todas las áreas</option>@for (area of areas(); track area.id) { <option [value]="area.id">{{ area.name }}</option> }</select>
+        <select formControlName="category_id" aria-label="Motivo"><option value="">Todos los motivos</option>@for (category of categories(); track category.id) { <option [value]="category.id">{{ category.name }}</option> }</select>
         <select formControlName="worker_id" aria-label="Trabajador"><option value="">Todos los trabajadores</option>@for (worker of workers(); track worker.id) { <option [value]="worker.id">{{ worker.full_name }}</option> }</select>
         <button type="submit" class="btn btn-primary" [disabled]="analyticsLoading()">Actualizar</button>
       </form>

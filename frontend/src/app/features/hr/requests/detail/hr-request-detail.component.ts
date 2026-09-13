@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HrRequestService } from '../../../../core/services/hr-services';
+import { DocumentService } from '../../../../core/services/document.service';
 import { LeaveRequest } from '../../../../core/models/index';
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -18,6 +19,7 @@ export class HrRequestDetailComponent implements OnInit {
   private route  = inject(ActivatedRoute);
   private router = inject(Router);
   private svc    = inject(HrRequestService);
+  private documents = inject(DocumentService);
 
   loading       = signal(true);
   processing    = signal(false);
@@ -25,6 +27,7 @@ export class HrRequestDetailComponent implements OnInit {
   showApprove   = signal(false);
   showReject    = signal(false);
   observation   = '';
+  documentError = signal('');
 
   get isActionable() {
     return this.request()?.status === 'PENDING';
@@ -62,6 +65,27 @@ export class HrRequestDetailComponent implements OnInit {
     this.svc.reject(this.request()!.id, { observation: obs }).subscribe({
       next: res => { this.request.set(res.data); this.processing.set(false); },
       error: ()  => this.processing.set(false),
+    });
+  }
+
+  openDocument(): void {
+    const url = this.request()?.document_url;
+    if (!url) return;
+    const tab = window.open('', '_blank');
+    this.documentError.set('');
+    this.documents.get(url).subscribe({
+      next: file => {
+        const objectUrl = URL.createObjectURL(file);
+        if (tab) tab.location.href = objectUrl;
+        else {
+          const link = document.createElement('a');
+          link.href = objectUrl;
+          link.download = 'documento-adjunto';
+          link.click();
+        }
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      },
+      error: () => { tab?.close(); this.documentError.set('No se pudo abrir el documento adjunto. Inténtalo nuevamente.'); },
     });
   }
 }

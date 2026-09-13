@@ -2,11 +2,10 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { HrDashboardService } from '../../../core/services/hr-services';
-import { HrAreaService } from '../../../core/services/hr-area-position.service';
+import { HrCategoryService, HrDashboardService } from '../../../core/services/hr-services';
 import { HrWorkerService } from '../../../core/services/hr-worker.service';
 import { ReportService } from '../../../core/services/report.service';
-import { Area, HrDashboardStats, HrRequestAnalytics, HrReportFilters, Worker } from '../../../core/models/index';
+import { HrDashboardStats, HrRequestAnalytics, HrReportFilters, RequestCategory, Worker } from '../../../core/models/index';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui.components';
 
@@ -20,14 +19,14 @@ export class HrDashboardComponent implements OnInit {
   private svc = inject(HrDashboardService);
   private reports = inject(ReportService);
   private workersService = inject(HrWorkerService);
-  private areasService = inject(HrAreaService);
+  private categoriesService = inject(HrCategoryService);
   private fb = inject(FormBuilder);
 
   loading = signal(true);
   stats   = signal<HrDashboardStats | null>(null);
   analytics = signal<HrRequestAnalytics | null>(null);
   workers = signal<Worker[]>([]);
-  areas = signal<Area[]>([]);
+  categories = signal<RequestCategory[]>([]);
   chartType = signal<'bar' | 'pie'>('bar');
   analyticsLoading = signal(true);
 
@@ -35,7 +34,7 @@ export class HrDashboardComponent implements OnInit {
     from: [this.firstDayOfMonth()],
     to: [this.lastDayOfMonth()],
     worker_id: [''],
-    area_id: [''],
+    category_id: [''],
   });
 
   ngOnInit(): void {
@@ -43,8 +42,8 @@ export class HrDashboardComponent implements OnInit {
       next: res => { this.stats.set(res.data); this.loading.set(false); },
       error: ()  => this.loading.set(false),
     });
-    forkJoin({ workers: this.workersService.getAll(), areas: this.areasService.getAll() }).subscribe({
-      next: data => { this.workers.set(data.workers.data ?? []); this.areas.set(data.areas.data ?? []); },
+    forkJoin({ workers: this.workersService.getAll(), categories: this.categoriesService.getAll() }).subscribe({
+      next: data => { this.workers.set(data.workers.data ?? []); this.categories.set(data.categories.data ?? []); },
     });
     this.loadAnalytics();
   }
@@ -77,7 +76,7 @@ export class HrDashboardComponent implements OnInit {
 
   private analyticsFilters(): HrReportFilters {
     const values = this.analyticsForm.getRawValue();
-    return { from: values.from ?? '', to: values.to ?? '', worker_id: values.worker_id ? Number(values.worker_id) : '', area_id: values.area_id ? Number(values.area_id) : '' };
+    return { from: values.from ?? '', to: values.to ?? '', worker_id: values.worker_id ? Number(values.worker_id) : '', category_id: values.category_id ? Number(values.category_id) : '' };
   }
 
   private today(): string { return this.localDate(new Date()); }

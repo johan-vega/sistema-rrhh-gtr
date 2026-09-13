@@ -93,7 +93,7 @@ El menú **Reportes** muestra inicialmente todo el historial y permite consultar
 
 En **Áreas de Planta** y al crear o editar un trabajador, RRHH puede definir topes mensuales separados para **permisos** y **faltas**. Un valor vacío o `0` no aplica tope. Una categoría se marca como **falta** desde **Categorías**; las demás se contabilizan como permisos. Al registrar una solicitud, el sistema bloquea la creación si el trabajador o su área ya alcanzaron el máximo de ese mes; las solicitudes rechazadas y canceladas no consumen cupo.
 
-El dashboard de RRHH incluye una gráfica de **solicitudes aprobadas y rechazadas** con filtros de rango, área y trabajador. Permite alternar entre barras y circular. El rango de esta gráfica usa las fechas del permiso o descanso solicitado, por lo que representa los eventos comprendidos en el período elegido.
+El dashboard de RRHH incluye una gráfica de **solicitudes aprobadas y rechazadas** con filtros de rango, trabajador y motivo de solicitud. Permite alternar entre barras y circular. El rango de esta gráfica usa las fechas del permiso o descanso solicitado, por lo que representa los eventos comprendidos en el período elegido.
 
 ## Sesiones, acceso inicial y cierre de sesión
 

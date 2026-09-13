@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\RequestStatus;
 use App\Models\Area;
 use App\Models\LaborRequest;
+use App\Models\RequestDocument;
 use App\Models\Position;
 use App\Models\RequestCategory;
 use App\Models\Role;
@@ -76,6 +77,18 @@ class LaborRequestApiTest extends TestCase
         Sanctum::actingAs($user);
         $this->post('/api/requests', array_merge($this->payload($category), ['documents' => [UploadedFile::fake()->create('certificado.pdf', 100, 'application/pdf')]]), ['Accept' => 'application/json'])->assertCreated();
         $this->assertDatabaseCount('request_documents', 1);
+    }
+
+    public function test_document_download_requires_authentication_without_redirecting_to_login(): void
+    {
+        $user = $this->worker();
+        $category = $this->category();
+        $request = LaborRequest::create(['worker_id' => $user->worker->id, 'category_id' => $category->id, 'start_date' => today(), 'end_date' => today(), 'reason' => 'x', 'status' => RequestStatus::PENDING, 'requested_at' => now()]);
+        $document = RequestDocument::create(['labor_request_id' => $request->id, 'original_name' => 'sustento.pdf', 'stored_name' => 'sustento.pdf', 'path' => 'request-documents/test/sustento.pdf', 'mime_type' => 'application/pdf', 'size' => 1]);
+
+        $this->get("/api/requests/{$request->id}/documents/{$document->id}")
+            ->assertUnauthorized()
+            ->assertJsonPath('message', 'No autenticado');
     }
 
     public function test_minimum_notice_is_enforced(): void

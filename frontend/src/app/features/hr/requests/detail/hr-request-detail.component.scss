@@ -61,7 +61,14 @@
   color: #2e86de;
   font-weight: 700;
   text-decoration: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
 }
+.doc-error { color: var(--color-error); font-size: var(--font-size-sm); }
+.rejection-box { background: var(--color-rejected-bg); border-color: var(--color-rejected-border); color: #991b1b; }
 .actions-bar {
   display: flex;
   gap: 1rem;
