@@ -10,7 +10,7 @@
   position: sticky;
   top: 0;
   z-index: var(--z-topbar);
-  background: #0f172a;
+  background: var(--color-primary);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 
   @media (min-width: 1024px) { display: none; }
@@ -29,8 +29,8 @@
   align-items: center;
   gap: 0.6rem;
 
-  .brand-svg { width: 22px; height: 22px; stroke: #0284c7; }
-  .brand-name { font-size: 0.85rem; font-weight: 800; color: white; letter-spacing: 0.5px; }
+  .brand-logo { width: 64px; height: 26px; object-fit: contain; }
+  .brand-name { font-size: 0.64rem; font-weight: 800; color: #d7efd2; letter-spacing: 0.45px; }
 }
 
 .topbar-actions {
@@ -64,7 +64,7 @@
     top: 0;
     bottom: 0;
     width: var(--sidebar-width);
-    background: #0f172a;
+    background: var(--color-primary);
     z-index: var(--z-sidebar);
     overflow-y: auto;
   }
@@ -77,8 +77,8 @@
   padding: 1.5rem 1.25rem;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 
-  .brand-svg { width: 24px; height: 24px; stroke: #0284c7; }
-  .brand-name { font-size: 0.85rem; font-weight: 900; color: white; letter-spacing: 1px; }
+  .brand-logo { width: 82px; height: 30px; object-fit: contain; }
+  .brand-name { font-size: 0.68rem; font-weight: 800; color: #d7efd2; letter-spacing: 0.65px; }
 }
 
 .sidebar-user {
@@ -93,7 +93,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #0284c7;
+  background: var(--color-accent);
   color: white;
   display: flex;
   align-items: center;
@@ -160,7 +160,7 @@
   }
 
   &.active {
-    background: #0284c7;
+    background: var(--color-accent);
     color: white;
     font-weight: 700;
     box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
@@ -222,7 +222,7 @@
   }
 
   &.active {
-    color: #0284c7;
-    .nav-icon svg { stroke: #0284c7; transform: scale(1.1); }
+    color: var(--color-accent);
+    .nav-icon svg { stroke: var(--color-accent); transform: scale(1.1); }
   }
 }

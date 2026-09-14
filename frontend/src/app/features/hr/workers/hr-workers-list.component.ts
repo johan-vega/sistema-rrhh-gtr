@@ -85,7 +85,7 @@ import { Worker } from '../../../core/models/index';
       p { color: #64748b; font-size: 0.88rem; margin: 0.2rem 0 0 0; }
     }
     .btn-primary {
-      background: #1e3a5f;
+      background: var(--color-primary);
       color: #fff;
       padding: 0.65rem 1.2rem;
       border-radius: 12px;
@@ -104,7 +104,7 @@ import { Worker } from '../../../core/models/index';
       border: 1px solid #cbd5e1;
       font-size: 0.9rem;
       outline: none;
-      &:focus { border-color: #2e86de; }
+      &:focus { border-color: var(--color-accent); }
     }
     .workers-grid {
       display: grid;
@@ -130,7 +130,7 @@ import { Worker } from '../../../core/models/index';
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: #1e3a5f;
+      background: var(--color-primary);
       color: #fff;
       font-weight: 800;
       display: flex;
@@ -182,7 +182,7 @@ import { Worker } from '../../../core/models/index';
     .btn-edit {
       padding: 0.5rem 1rem;
       border-radius: 10px;
-      background: #2e86de;
+      background: var(--color-accent);
       color: #fff;
       text-decoration: none;
       font-weight: 700;

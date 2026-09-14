@@ -135,7 +135,7 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
       border: 1px solid #cbd5e1;
       font-size: 0.88rem;
       outline: none;
-      &:focus { border-color: #2e86de; }
+      &:focus { border-color: var(--color-accent); }
     }
     .form-actions {
       display: flex;
@@ -157,7 +157,7 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
     .btn-submit {
       padding: 0.65rem 1.4rem;
       border-radius: 10px;
-      background: #1e3a5f;
+      background: var(--color-primary);
       color: #fff;
       border: none;
       font-weight: 700;

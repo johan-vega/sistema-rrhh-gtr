@@ -1,6 +1,6 @@
 /* ============================================================
-  SISTEMA RRHH — Industrial Plastics Corporate Design System
-  Modern Corporate | Inter font | Slate & Industrial Cyan
+  SISTEMA RRHH — GTR Corporate Design System
+  Grupo Torres Rodríguez | Verde institucional y neutros naturales
    ============================================================ */
 
 /* Google Fonts */
@@ -11,35 +11,35 @@
    ============================================================ */
 :root {
   /* Colores corporativos: cambie esta gama para personalizar la identidad visual. */
-  --color-primary: #0F172A;
-  /* Color corporativo principal: barras y elementos oscuros. */
-  --color-primary-light: #1E293B;
-  /* Variante clara del color principal: fondos oscuros secundarios. */
-  --color-accent: #0284C7;
-  /* Color de acción: botones principales, enlaces y elementos activos. */
-  --color-accent-hover: #0369A1;
-  /* Color de acción al pasar el cursor por botones y enlaces. */
-  --color-accent-subtle: rgba(2, 132, 199, 0.1);
+  --color-primary: #173D2A;
+  /* Verde bosque GTR: barras, títulos y elementos de mayor jerarquía. */
+  --color-primary-light: #285F3D;
+  /* Verde profundo secundario: fondos oscuros y transiciones. */
+  --color-accent: #3F8A47;
+  /* Verde de acción: botones principales, enlaces y elementos activos. */
+  --color-accent-hover: #2E7038;
+  /* Verde de acción al pasar el cursor por botones y enlaces. */
+  --color-accent-subtle: rgba(63, 138, 71, 0.12);
   /* Color de acción suave: fondos de resaltado. */
 
   /* Fondos y bordes */
-  --color-bg: #F8FAFC;
+  --color-bg: #F5F8F4;
   /* Fondo general de todas las páginas. */
   --color-surface: #FFFFFF;
   /* Fondo de tarjetas, formularios y paneles. */
-  --color-surface-2: #F1F5F9;
+  --color-surface-2: #EDF4EE;
   /* Fondo alternativo de secciones y controles. */
-  --color-border: #E2E8F0;
+  --color-border: #D9E5DA;
   /* Color de bordes estándar. */
-  --color-border-light: #F1F5F9;
+  --color-border-light: #EDF4EE;
   /* Color de separadores y bordes sutiles. */
 
   /* Colores de texto */
-  --color-text-primary: #0F172A;
+  --color-text-primary: #143020;
   /* Texto principal, títulos y datos importantes. */
-  --color-text-secondary: #475569;
+  --color-text-secondary: #42634B;
   /* Texto secundario en tarjetas y formularios. */
-  --color-text-muted: #64748B;
+  --color-text-muted: #6D8473;
   /* Texto auxiliar, fechas y ayudas. */
   --color-text-inverse: #FFFFFF;
   /* Texto sobre fondos oscuros o botones primarios. */
@@ -51,11 +51,11 @@
   /* Fondo de una solicitud pendiente. */
   --color-pending-border: #FCD34D;
   /* Borde de una solicitud pendiente. */
-  --color-approved: #10B981;
+  --color-approved: #2F8C4E;
   /* Estado aprobado: texto, iconos y etiquetas. */
-  --color-approved-bg: #ECFDF5;
+  --color-approved-bg: #EDF8EF;
   /* Fondo de una solicitud aprobada. */
-  --color-approved-border: #6EE7B7;
+  --color-approved-border: #9BD6A7;
   /* Borde de una solicitud aprobada. */
   --color-rejected: #EF4444;
   /* Estado rechazado: texto, iconos y etiquetas. */
@@ -71,13 +71,13 @@
   /* Borde de una solicitud cancelada. */
 
   /* Colores de mensajes del sistema */
-  --color-success: #10B981;
+  --color-success: #2F8C4E;
   /* Confirmaciones correctas. */
   --color-warning: #F59E0B;
   /* Advertencias que requieren atención. */
   --color-error: #EF4444;
   /* Errores de validación o acciones fallidas. */
-  --color-info: #0284C7;
+  --color-info: #397A56;
   /* Avisos informativos. */
 
   /* Tipografía */
@@ -143,15 +143,15 @@
   /* Avatares, píldoras y elementos circulares. */
 
   /* Sombras para profundidad visual */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-xs: 0 1px 2px rgba(23, 61, 42, 0.05);
   /* Sombra apenas perceptible. */
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px rgba(23, 61, 42, 0.07), 0 1px 2px rgba(23, 61, 42, 0.03);
   /* Sombra de controles. */
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(23, 61, 42, 0.08), 0 2px 4px rgba(23, 61, 42, 0.04);
   /* Sombra de tarjetas. */
-  --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.09), 0 4px 6px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 25px rgba(23, 61, 42, 0.11), 0 4px 6px rgba(23, 61, 42, 0.04);
   /* Sombra de menús o paneles. */
-  --shadow-xl: 0 20px 35px rgba(15, 23, 42, 0.12);
+  --shadow-xl: 0 20px 35px rgba(23, 61, 42, 0.14);
   /* Sombra de diálogos destacados. */
 
   /* Velocidad de animaciones */
@@ -258,7 +258,7 @@ button {
 .btn-primary {
   background: var(--color-accent);
   color: var(--color-text-inverse);
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 4px 14px rgba(63, 138, 71, 0.32);
 
   &:hover {
     background: var(--color-accent-hover);
@@ -333,7 +333,7 @@ button {
   &:focus {
     outline: none;
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    box-shadow: 0 0 0 3px rgba(63, 138, 71, 0.16);
   }
 }
 

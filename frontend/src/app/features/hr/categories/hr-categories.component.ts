@@ -126,7 +126,7 @@ import { RequestCategory } from '../../../core/models/index';
       gap: 0.5rem;
       font-size: 0.88rem;
       font-weight: 700;
-      color: #1e3a5f;
+      color: var(--color-primary);
       cursor: pointer;
     }
     .input-control {
@@ -135,7 +135,7 @@ import { RequestCategory } from '../../../core/models/index';
       border: 1px solid #cbd5e1;
       font-size: 0.88rem;
       outline: none;
-      &:focus { border-color: #2e86de; }
+      &:focus { border-color: var(--color-accent); }
     }
     .form-actions {
       display: flex;
@@ -143,7 +143,7 @@ import { RequestCategory } from '../../../core/models/index';
       margin-top: 1.25rem;
     }
     .btn-primary {
-      background: #1e3a5f;
+      background: var(--color-primary);
       color: #fff;
       border: none;
       padding: 0.65rem 1.2rem;
@@ -216,7 +216,7 @@ import { RequestCategory } from '../../../core/models/index';
       flex: 1;
       padding: 0.45rem;
       border-radius: 8px;
-      background: #2e86de;
+      background: var(--color-accent);
       color: #fff;
       border: none;
       font-weight: 700;
