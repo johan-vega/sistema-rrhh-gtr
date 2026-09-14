@@ -21,6 +21,7 @@ export class HrLayoutComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   menuOpen = false;
   private knownNotificationIds = new Set<string | number>();
+  private hasLoadedNotifications = false;
 
   toggleMenu(): void { this.menuOpen = !this.menuOpen; }
   closeMenu(): void  { this.menuOpen = false; }
@@ -46,14 +47,14 @@ export class HrLayoutComponent implements OnInit {
     ).subscribe({
       next: response => {
         const notifications = response.data;
-        const isFirstRead = this.knownNotificationIds.size === 0;
         const newNotifications = notifications.filter(notification => !this.knownNotificationIds.has(notification.id));
         notifications.forEach(notification => this.knownNotificationIds.add(notification.id));
-        if (!isFirstRead) {
+        if (this.hasLoadedNotifications) {
           newNotifications.filter(notification => !notification.read).forEach(notification =>
             this.pwa.showNotification(notification.title, notification.message),
           );
         }
+        this.hasLoadedNotifications = true;
       },
     });
   }

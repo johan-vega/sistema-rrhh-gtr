@@ -91,30 +91,6 @@
   }
 }
 
-.browser-permission {
-  margin-top: 1rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
-  color: #0f172a;
-  font-size: 0.82rem;
-
-  strong {
-    display: block;
-  }
-
-  p {
-    margin: 0.3rem 0 0.7rem;
-    color: #64748b;
-    line-height: 1.45;
-  }
-
-  .btn {
-    min-height: 38px;
-  }
-}
-
 .corp-brand-name {
   font-size: 1.15rem;
   font-weight: 900;
@@ -219,41 +195,5 @@
 
   &:hover {
     color: #0284c7;
-  }
-}
-
-.demo-info {
-  margin-top: 1.5rem;
-  padding: 0.85rem 1rem;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  font-size: 0.78rem;
-  color: #475569;
-
-  p {
-    margin: 0.2rem 0;
-  }
-
-  code {
-    background: #e2e8f0;
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-family: monospace;
-  }
-}
-
-.demo-title {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 0.4rem;
-
-  .demo-svg {
-    width: 16px;
-    height: 16px;
-    stroke: #0284c7;
   }
 }
