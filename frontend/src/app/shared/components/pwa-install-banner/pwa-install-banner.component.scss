@@ -1,0 +1,55 @@
+:host {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 3000;
+  max-width: min(28rem, calc(100vw - 2rem));
+}
+
+.pwa-install-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
+  color: #0f172a;
+}
+
+.pwa-install-copy {
+  min-width: 0;
+
+  strong { display: block; font-size: 0.9rem; }
+  p { margin: 0.25rem 0 0; color: #475569; font-size: 0.8rem; line-height: 1.4; }
+}
+
+.pwa-install-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.install-button,
+.dismiss-button {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.install-button { background: #0284c7; color: #ffffff; }
+.dismiss-button { background: #e2e8f0; color: #334155; }
+
+@media (max-width: 560px) {
+  :host { right: 0.75rem; bottom: calc(var(--bottom-nav-height, 0px) + 0.75rem); max-width: calc(100vw - 1.5rem); }
+  .pwa-install-banner { align-items: flex-start; flex-direction: column; gap: 0.75rem; }
+  .pwa-install-actions { width: 100%; flex-direction: row; }
+  .install-button, .dismiss-button { flex: 1; }
+}

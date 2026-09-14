@@ -2,7 +2,6 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { PwaService } from '../../../core/services/pwa.service';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +13,6 @@ export class LoginComponent implements OnInit {
   private fb    = inject(FormBuilder);
   private auth  = inject(AuthService);
   private route = inject(ActivatedRoute);
-  pwa           = inject(PwaService);
 
   loading      = signal(false);
   error        = signal('');

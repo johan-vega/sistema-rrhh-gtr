@@ -80,7 +80,7 @@ export class HrRequestDetailComponent implements OnInit {
         else {
           const link = document.createElement('a');
           link.href = objectUrl;
-          link.download = 'documento-adjunto';
+          link.download = this.request()?.document_name || 'documento-adjunto';
           link.click();
         }
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
@@ -100,7 +100,7 @@ export class HrRequestDetailComponent implements OnInit {
 
         const link = document.createElement('a');
         link.href = objectUrl;
-        link.download = 'documento-adjunto';
+        link.download = this.request()?.document_name || 'documento-adjunto';
         document.body.appendChild(link);
 
         link.click();

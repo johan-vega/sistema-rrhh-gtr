@@ -38,7 +38,6 @@
     </div>
     }
 
-    <!-- Usuario inicial de RRHH: rrhh@gtr.test / Password123! (solo desarrollo) -->
     <!-- Login Form -->
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
       <div class="form-group">
@@ -104,32 +103,10 @@
       </button>
     </form>
 
-    @if (pwa.installAvailable()) {
-    <section class="browser-permission" aria-label="Instalar aplicación">
-      <strong>¿Deseas instalar la aplicación?</strong>
-      <p>Podrás abrirla desde el escritorio o la pantalla de inicio.</p>
-      <button type="button" class="btn btn-secondary btn-full" (click)="pwa.install()">Descargar aplicación</button>
-    </section>
-    }
-
     <div class="login-footer">
       <a href="mailto:rrhh@empresa.com" class="forgot-link">
         ¿Problemas para ingresar? Soporte RRHH &amp; TI
       </a>
-    </div>
-
-    <!-- Credenciales iniciales de desarrollo -->
-    <div class="demo-info">
-      <div class="demo-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="demo-svg">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" />
-        </svg>
-        <span>Acceso inicial</span>
-      </div>
-      <p><strong>RRHH:</strong> <code>rrhh&#64;gtr.test</code></p>
-      <p><strong>Contraseña:</strong> <code>Password123!</code> (solo desarrollo)</p>
     </div>
   </div>
 </main>

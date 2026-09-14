@@ -1,0 +1,18 @@
+@if (shouldShow()) {
+  <section class="pwa-install-banner" aria-label="Instalar Sistema GTR">
+    <div class="pwa-install-copy">
+      <strong>Instalar Sistema GTR</strong>
+      @if (pwa.isIos()) {
+        <p>Para instalar Sistema GTR, pulsa Compartir y luego “Añadir a pantalla de inicio”.</p>
+      } @else {
+        <p>Instala el sistema para acceder más rápido desde tu escritorio o pantalla de inicio.</p>
+      }
+    </div>
+    <div class="pwa-install-actions">
+      @if (!pwa.isIos() && pwa.installAvailable()) {
+        <button type="button" class="install-button" (click)="install()">Instalar Sistema GTR</button>
+      }
+      <button type="button" class="dismiss-button" (click)="dismiss()">Ahora no</button>
+    </div>
+  </section>
+}

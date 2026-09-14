@@ -25,11 +25,17 @@
       </div>
     </div>
 
-    @if (pwa.notificationsSupported() && pwa.notificationPermission() === 'default') {
+    @if (pwa.notificationsSupported()) {
       <section class="notification-consent" aria-label="Permiso de notificaciones">
         <strong>Notificaciones de RRHH</strong>
-        <p>Recibe un aviso al llegar una nueva solicitud.</p>
-        <button type="button" (click)="pwa.requestNotifications()">Permitir</button>
+        @if (pwa.notificationPermission() === 'default') {
+          <p>Recibe un aviso al llegar una nueva solicitud.</p>
+          <button type="button" (click)="pwa.requestNotifications()">Permitir</button>
+        } @else if (pwa.notificationPermission() === 'granted') {
+          <p class="notification-status is-granted">Notificaciones activadas.</p>
+        } @else {
+          <p class="notification-status is-denied">Las notificaciones están bloqueadas en el navegador. Habilítalas desde los permisos del sitio.</p>
+        }
       </section>
     }
 

@@ -167,6 +167,10 @@
     width: 100%; padding: 0.38rem 0.55rem; border: 0; border-radius: var(--radius-sm);
     background: var(--color-accent); color: white; font: inherit; font-weight: 700;
   }
+
+  .notification-status { margin-bottom: 0; }
+  .is-granted { color: #86efac; }
+  .is-denied { color: #fda4af; }
 }
 
 .nav-item {
