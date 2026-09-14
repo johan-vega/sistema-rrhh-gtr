@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Worker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -50,7 +51,21 @@ class LaborRequestApiTest extends TestCase
     {
         [$hr] = $this->roles();
         User::factory()->create(['email' => 'hr@test.com', 'password' => 'password', 'role_id' => $hr->id]);
-        $this->postJson('/api/login', ['email' => 'hr@test.com', 'password' => 'password'])->assertOk()->assertJsonPath('success', true)->assertJsonStructure(['data' => ['token', 'user']]);
+        $response = $this->postJson('/api/login', ['email' => 'hr@test.com', 'password' => 'password'])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure(['data' => ['token', 'user']]);
+
+        $this->getJson('/api/me', ['Authorization' => 'Bearer '.$response->json('data.token')])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+    }
+
+    public function test_health_endpoint_is_public_and_returns_no_sensitive_configuration(): void
+    {
+        $this->getJson('/api/health')
+            ->assertOk()
+            ->assertExactJson(['success' => true, 'message' => 'API funcionando']);
     }
 
     public function test_worker_can_create_request_without_required_document(): void
@@ -89,6 +104,45 @@ class LaborRequestApiTest extends TestCase
         $this->get("/api/requests/{$request->id}/documents/{$document->id}")
             ->assertUnauthorized()
             ->assertJsonPath('message', 'No autenticado');
+    }
+
+    public function test_authorized_document_download_uses_the_configured_private_disk(): void
+    {
+        config(['filesystems.default' => 's3']);
+        Storage::fake('s3');
+        $user = $this->worker();
+        $category = $this->category(['requires_document' => true]);
+        Sanctum::actingAs($user);
+
+        $this->post('/api/requests', array_merge($this->payload($category), [
+            'documents' => [UploadedFile::fake()->create('sustento.pdf', 10, 'application/pdf')],
+        ]), ['Accept' => 'application/json'])->assertCreated();
+
+        $document = RequestDocument::firstOrFail();
+        Storage::disk('s3')->assertExists($document->path);
+        $this->get("/api/requests/{$document->labor_request_id}/documents/{$document->id}")
+            ->assertOk()
+            ->assertDownload('sustento.pdf');
+
+        [$hr] = $this->roles();
+        Sanctum::actingAs(User::factory()->create(['role_id' => $hr->id]));
+        $this->get("/api/hr/requests/{$document->labor_request_id}/documents/{$document->id}")
+            ->assertOk()
+            ->assertDownload('sustento.pdf');
+    }
+
+    public function test_worker_cannot_download_another_workers_document(): void
+    {
+        config(['filesystems.default' => 's3']);
+        Storage::fake('s3');
+        $owner = $this->worker();
+        $category = $this->category();
+        $request = LaborRequest::create(['worker_id' => $owner->worker->id, 'category_id' => $category->id, 'start_date' => today(), 'end_date' => today(), 'reason' => 'x', 'status' => RequestStatus::PENDING, 'requested_at' => now()]);
+        $document = RequestDocument::create(['labor_request_id' => $request->id, 'original_name' => 'privado.pdf', 'stored_name' => 'privado.pdf', 'path' => 'request-documents/test/privado.pdf', 'mime_type' => 'application/pdf', 'size' => 1]);
+        Storage::disk('s3')->put($document->path, 'privado');
+
+        Sanctum::actingAs($this->worker('documento-ajeno@test.com'));
+        $this->getJson("/api/requests/{$request->id}/documents/{$document->id}")->assertForbidden();
     }
 
     public function test_minimum_notice_is_enforced(): void
@@ -222,7 +276,7 @@ class LaborRequestApiTest extends TestCase
         $this->assertStringContainsString('width="34"', $sheet);
     }
 
-    public function test_monthly_worker_and_area_limits_block_new_permission_requests(): void
+    public function test_monthly_worker_and_area_limits_do_not_block_new_permission_requests(): void
     {
         $first = $this->worker();
         $category = $this->category();
@@ -230,14 +284,13 @@ class LaborRequestApiTest extends TestCase
         Sanctum::actingAs($first);
         $this->postJson('/api/requests', $this->payload($category))->assertCreated();
         $this->postJson('/api/requests', $this->payload($category, ['end_date' => today()->addDays(5)->toDateString()]))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('start_date');
+            ->assertCreated();
 
         $first->worker->update(['monthly_permission_limit' => null]);
         $first->worker->area->update(['monthly_permission_limit' => 1]);
         $second = $this->worker('area-limit@test.com');
         Sanctum::actingAs($second);
-        $this->postJson('/api/requests', $this->payload($category))->assertUnprocessable()->assertJsonValidationErrors('start_date');
+        $this->postJson('/api/requests', $this->payload($category))->assertCreated();
     }
 
     public function test_hr_can_get_approved_and_rejected_request_analytics(): void

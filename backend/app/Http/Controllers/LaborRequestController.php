@@ -62,9 +62,10 @@ class LaborRequestController extends ApiController
     {
         $this->authorize('downloadDocument', $request);
         abort_unless($document->labor_request_id === $request->id, 404);
-        abort_unless(Storage::disk('local')->exists($document->path), 404);
+        $disk = Storage::disk(config('filesystems.default'));
+        abort_unless($disk->exists($document->path), 404);
 
-        return Storage::disk('local')->download($document->path, $document->original_name, ['Content-Type' => $document->mime_type]);
+        return $disk->download($document->path, $document->original_name, ['Content-Type' => $document->mime_type]);
     }
 
     public function calendar(Request $request)

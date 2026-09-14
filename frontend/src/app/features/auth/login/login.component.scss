@@ -28,6 +28,7 @@
     top: -100px;
     right: -100px;
   }
+
   &.blob-2 {
     width: 400px;
     height: 400px;
@@ -55,11 +56,11 @@
 }
 
 .login-logo-box {
-  width: 56px;
-  height: 56px;
+  width: auto;
+  height: auto;
   margin: 0 auto 1rem auto;
   border-radius: 16px;
-  background: linear-gradient(135deg, #0f172a, #0284c7);
+  background: linear-gradient(35deg, #0f172a, #0284c7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,7 +84,11 @@
   font-weight: 600;
   cursor: pointer;
 
-  input { width: 16px; height: 16px; accent-color: #0284c7; }
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: #0284c7;
+  }
 }
 
 .browser-permission {
@@ -95,9 +100,19 @@
   color: #0f172a;
   font-size: 0.82rem;
 
-  strong { display: block; }
-  p { margin: 0.3rem 0 0.7rem; color: #64748b; line-height: 1.45; }
-  .btn { min-height: 38px; }
+  strong {
+    display: block;
+  }
+
+  p {
+    margin: 0.3rem 0 0.7rem;
+    color: #64748b;
+    line-height: 1.45;
+  }
+
+  .btn {
+    min-height: 38px;
+  }
 }
 
 .corp-brand-name {
@@ -176,14 +191,20 @@
   background: #fffbe6;
   border: 1px solid #ffe58f;
   color: #d48806;
-  .alert-svg { stroke: #d48806; }
+
+  .alert-svg {
+    stroke: #d48806;
+  }
 }
 
 .alert-error {
   background: #fff2f0;
   border: 1px solid #ffccc7;
   color: #ff4d4f;
-  .alert-svg { stroke: #ff4d4f; }
+
+  .alert-svg {
+    stroke: #ff4d4f;
+  }
 }
 
 .login-footer {
@@ -195,7 +216,10 @@
   font-size: 0.8rem;
   color: #64748b;
   font-weight: 600;
-  &:hover { color: #0284c7; }
+
+  &:hover {
+    color: #0284c7;
+  }
 }
 
 .demo-info {
@@ -207,8 +231,16 @@
   font-size: 0.78rem;
   color: #475569;
 
-  p { margin: 0.2rem 0; }
-  code { background: #e2e8f0; padding: 1px 5px; border-radius: 4px; font-family: monospace; }
+  p {
+    margin: 0.2rem 0;
+  }
+
+  code {
+    background: #e2e8f0;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
 }
 
 .demo-title {
