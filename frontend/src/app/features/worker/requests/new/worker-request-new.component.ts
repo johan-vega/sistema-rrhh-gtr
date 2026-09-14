@@ -143,6 +143,13 @@ export class WorkerRequestNewComponent implements OnInit {
 
   private getRequestError(error: any): string {
     const errors = error?.error?.errors as Record<string, string[]> | undefined;
-    return errors ? Object.values(errors).flat()[0] ?? error?.error?.message : error?.error?.message || 'No se pudo enviar. Revisa los datos.';
+    const message = Object.values(errors ?? {}).flat()[0] ?? error?.error?.message;
+    const safeMessages: Record<string, string> = {
+      'validation.required': 'Completa todos los campos obligatorios antes de enviar la solicitud.',
+      'validation.uploaded': 'No se pudo cargar el archivo. Verifica que no supere 10 MB e inténtalo nuevamente.',
+      'validation.mimes': 'El documento debe ser PDF, JPG, PNG, WEBP, HEIC o HEIF.',
+    };
+
+    return safeMessages[message ?? ''] ?? message ?? 'No se pudo enviar. Revisa los datos.';
   }
 }

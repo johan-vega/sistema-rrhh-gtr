@@ -85,6 +85,16 @@ class LaborRequestApiTest extends TestCase
         $this->postJson('/api/requests', $this->payload($category))->assertUnprocessable()->assertJsonPath('success', false);
     }
 
+    public function test_validation_messages_are_readable_in_spanish(): void
+    {
+        config(['app.locale' => 'es', 'app.fallback_locale' => 'es']);
+        Sanctum::actingAs($this->worker());
+
+        $this->postJson('/api/requests', [])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.category_id.0', 'El campo tipo de solicitud es obligatorio.');
+    }
+
     public function test_document_category_accepts_valid_file(): void
     {
         $user = $this->worker();
