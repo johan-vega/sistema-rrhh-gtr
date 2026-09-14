@@ -21,7 +21,7 @@
   border: 1px solid #cbd5e1;
   font-size: 0.88rem;
   outline: none;
-  &:focus { border-color: #2e86de; }
+  &:focus { border-color: var(--color-accent); }
 }
 .select-filter {
   padding: 0.7rem 1rem;
@@ -59,7 +59,7 @@
 .cat-title {
   font-weight: 800;
   font-size: 0.9rem;
-  color: #1e3a5f;
+  color: var(--color-primary);
   margin-bottom: 0.3rem;
 }
 .dates-row {
@@ -83,7 +83,7 @@
   text-align: center;
   padding: 0.55rem;
   border-radius: 10px;
-  background: #1e3a5f;
+  background: var(--color-primary);
   color: #fff;
   text-decoration: none;
   font-weight: 700;

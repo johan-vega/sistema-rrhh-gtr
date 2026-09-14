@@ -7,7 +7,7 @@
   margin-bottom: 1.25rem;
 }
 .back-link {
-  color: #1e3a5f;
+  color: var(--color-primary);
   font-weight: 700;
   text-decoration: none;
   font-size: 0.88rem;
@@ -31,7 +31,7 @@
 }
 .info-section {
   margin-bottom: 1.5rem;
-  h3 { font-size: 1.05rem; font-weight: 800; color: #1e3a5f; margin: 0 0 0.8rem 0; }
+  h3 { font-size: 1.05rem; font-weight: 800; color: var(--color-primary); margin: 0 0 0.8rem 0; }
 }
 .info-grid {
   display: grid;
@@ -58,7 +58,7 @@
 }
 .doc-link {
   display: inline-block;
-  color: #2e86de;
+  color: var(--color-accent);
   font-weight: 700;
   text-decoration: none;
   background: transparent;

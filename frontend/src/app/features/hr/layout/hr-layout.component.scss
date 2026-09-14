@@ -23,7 +23,7 @@
   right: 0;
   width: 100%;
   z-index: var(--z-topbar);
-  background: #0f172a;
+  background: var(--color-primary);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 
   @media (min-width: 1024px) { display: none; }
@@ -83,7 +83,7 @@
   bottom: 0;
   left: 0;
   width: var(--sidebar-width);
-  background: #0f172a;
+  background: var(--color-primary);
   z-index: var(--z-sidebar);
   display: flex;
   flex-direction: column;
@@ -106,8 +106,8 @@
     display: flex;
     align-items: center;
     gap: 0.625rem;
-    .brand-svg { width: 24px; height: 24px; stroke: #0284c7; }
-    .brand-name { color: white; font-weight: 900; font-size: 0.85rem; letter-spacing: 1px; }
+    .brand-logo { width: 74px; height: 28px; object-fit: contain; }
+    .brand-name { color: #d7efd2; font-weight: 800; font-size: 0.68rem; letter-spacing: 0.7px; }
   }
 
   .close-btn {
@@ -132,7 +132,7 @@
 .user-avatar {
   width: 38px; height: 38px;
   border-radius: 50%;
-  background: #0284c7;
+  background: var(--color-accent);
   color: white;
   display: flex; align-items: center; justify-content: center;
   font-weight: 800;
@@ -168,7 +168,6 @@
     background: var(--color-accent); color: white; font: inherit; font-weight: 700;
   }
 
-  .notification-status { margin-bottom: 0; }
   .is-granted { color: #86efac; }
   .is-denied { color: #fda4af; }
 }
@@ -199,7 +198,7 @@
   }
 
   &:hover { background: rgba(255,255,255,0.1); color: white; }
-  &.active { background: #0284c7; color: white; font-weight: 700; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4); }
+  &.active { background: var(--color-accent); color: #fff; }
 }
 
 .sidebar-footer {

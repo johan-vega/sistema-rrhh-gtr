@@ -61,7 +61,7 @@ import { AppNotification } from '../../../core/models/index';
     }
     .btn-read {
       background: #f1f5f9;
-      color: #1e3a5f;
+      color: var(--color-primary);
       border: none;
       padding: 0.6rem 1rem;
       border-radius: 10px;

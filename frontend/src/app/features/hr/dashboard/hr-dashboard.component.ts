@@ -71,7 +71,7 @@ export class HrDashboardComponent implements OnInit {
     const data = this.analytics();
     if (!data?.total) return 'conic-gradient(#e2e8f0 0 100%)';
     const approvedPercent = data.approved / data.total * 100;
-    return `conic-gradient(#10B981 0 ${approvedPercent}%, #EF4444 ${approvedPercent}% 100%)`;
+    return `conic-gradient(#2F8C4E 0 ${approvedPercent}%, #EF4444 ${approvedPercent}% 100%)`;
   }
 
   private analyticsFilters(): HrReportFilters {

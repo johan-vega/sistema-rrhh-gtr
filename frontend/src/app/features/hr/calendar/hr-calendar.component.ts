@@ -103,7 +103,7 @@ import { CalendarEvent } from '../../../core/models/index';
     .current-month {
       font-weight: 800;
       font-size: 1.2rem;
-      color: #1e3a5f;
+      color: var(--color-primary);
       text-align: center;
       min-width: 0;
       flex: 1;
@@ -114,7 +114,7 @@ import { CalendarEvent } from '../../../core/models/index';
       padding: 0.5rem 0.75rem;
       border-radius: 10px;
       font-weight: 700;
-      color: #1e3a5f;
+      color: var(--color-primary);
       cursor: pointer;
       &:hover { background: #e2e8f0; }
     }
@@ -146,9 +146,9 @@ import { CalendarEvent } from '../../../core/models/index';
       font: inherit;
       cursor: pointer;
       &.empty { background: transparent; border: none; }
-      &.today { border-color: #2e86de; background: rgba(46, 134, 222, 0.04); }
+      &.today { border-color: var(--color-accent); background: var(--color-accent-subtle); }
       &.has-events:hover, &.has-events:focus-visible { border-color: #16a34a; outline: none; }
-      &.selected { border-color: #0284c7; box-shadow: inset 0 0 0 1px #0284c7; }
+      &.selected { border-color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
     }
     .day-number {
       font-weight: 800;
@@ -198,7 +198,7 @@ import { CalendarEvent } from '../../../core/models/index';
       border-top: 1px solid #f1f5f9;
       background: #f8fafc;
       border-radius: 10px;
-      h3 { margin: 0 0 0.75rem; color: #1e3a5f; font-size: 0.95rem; }
+      h3 { margin: 0 0 0.75rem; color: var(--color-primary); font-size: 0.95rem; }
       p { margin: 0; color: #64748b; font-size: 0.875rem; }
       ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.65rem; margin: 0; padding: 0; list-style: none; }
       li { display: flex; align-items: flex-start; gap: 0.55rem; min-width: 0; }

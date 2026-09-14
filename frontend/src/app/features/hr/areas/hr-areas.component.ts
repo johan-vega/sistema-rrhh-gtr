@@ -97,11 +97,11 @@ import { Area } from '../../../core/models/index';
       border: 1px solid #cbd5e1;
       font-size: 0.88rem;
       outline: none;
-      &:focus { border-color: #2e86de; }
+      &:focus { border-color: var(--color-accent); }
     }
     .limit-input { max-width: 145px; }
     .btn-primary {
-      background: #1e3a5f;
+      background: var(--color-primary);
       color: #fff;
       border: none;
       padding: 0.65rem 1.2rem;
@@ -165,7 +165,7 @@ import { Area } from '../../../core/models/index';
       font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
-      &.edit { color: #2e86de; border-color: #93c5fd; }
+      &.edit { color: var(--color-accent); border-color: #9bcaa2; }
       &.toggle { color: #64748b; }
     }
     @media (max-width: 600px) {
