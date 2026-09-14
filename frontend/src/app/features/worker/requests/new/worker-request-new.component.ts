@@ -54,7 +54,14 @@ export class WorkerRequestNewComponent implements OnInit {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const diffDays = Math.floor((start.getTime() - today.getTime()) / 86400000);
 
-    if (diffDays < cat.minimum_advance_days) {
+    if (cat.is_absence && diffDays < 0) {
+      const maximumPastDays = cat.maximum_past_days ?? 0;
+      this.dateWarning.set(
+        diffDays < -maximumPastDays
+          ? `La justificación puede registrarse hasta ${maximumPastDays} día(s) después de la falta.`
+          : `Puedes justificar una falta ocurrida hasta hace ${maximumPastDays} día(s).`,
+      );
+    } else if (diffDays < cat.minimum_advance_days) {
       this.dateWarning.set(
         `Esta categoría requiere al menos ${cat.minimum_advance_days} día(s) de anticipación.`
       );
@@ -68,13 +75,15 @@ export class WorkerRequestNewComponent implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
 
-    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowed.includes(file.type)) {
-      this.error.set('Solo se permiten archivos PDF, JPG o PNG.');
+    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
+    if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(extension ?? '')) {
+      this.error.set('Solo se permiten archivos PDF, JPG, PNG, WEBP o HEIC.');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      this.error.set('El archivo no debe superar 5 MB.');
+    if (file.size > 10 * 1024 * 1024) {
+      this.error.set('El archivo no debe superar 10 MB.');
       return;
     }
     this.error.set('');
@@ -114,7 +123,7 @@ export class WorkerRequestNewComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(err?.error?.message || 'No se pudo enviar. Revisa los datos.');
+        this.error.set(this.getRequestError(err));
       },
     });
   }
@@ -123,4 +132,17 @@ export class WorkerRequestNewComponent implements OnInit {
   get startCtrl()     { return this.form.get('start_date')!; }
   get endCtrl()       { return this.form.get('end_date')!; }
   get reasonCtrl()    { return this.form.get('reason')!; }
+
+  get minimumSelectableDate(): string {
+    const category = this.selectedCategory();
+    if (!category?.is_absence) return this.today;
+    const date = new Date();
+    date.setDate(date.getDate() - (category.maximum_past_days ?? 0));
+    return date.toISOString().split('T')[0];
+  }
+
+  private getRequestError(error: any): string {
+    const errors = error?.error?.errors as Record<string, string[]> | undefined;
+    return errors ? Object.values(errors).flat()[0] ?? error?.error?.message : error?.error?.message || 'No se pudo enviar. Revisa los datos.';
+  }
 }

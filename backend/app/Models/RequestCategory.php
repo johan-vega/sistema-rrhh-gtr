@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class RequestCategory extends Model
 {
-    protected $fillable = ['name', 'description', 'requires_document', 'minimum_notice_days', 'active', 'allow_approved_cancellation', 'is_absence'];
+    protected $fillable = ['name', 'description', 'requires_document', 'minimum_notice_days', 'maximum_past_days', 'active', 'allow_approved_cancellation', 'is_absence'];
 
     protected function casts(): array
     {
-        return ['requires_document' => 'boolean', 'active' => 'boolean', 'allow_approved_cancellation' => 'boolean', 'is_absence' => 'boolean'];
+        return ['requires_document' => 'boolean', 'maximum_past_days' => 'integer', 'active' => 'boolean', 'allow_approved_cancellation' => 'boolean', 'is_absence' => 'boolean'];
     }
 
     public function requests()

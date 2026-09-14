@@ -28,6 +28,13 @@ import { RequestCategory } from '../../../core/models/index';
             <input type="number" [(ngModel)]="category.minimum_advance_days" min="0" class="input-control" />
           </div>
 
+          @if (category.is_absence) {
+            <div class="form-group">
+              <label>Máximo de Días para Justificar una Falta</label>
+              <input type="number" [(ngModel)]="category.maximum_past_days" min="0" max="365" class="input-control" />
+            </div>
+          }
+
           <div class="form-group full-width">
             <label>Descripción</label>
             <input type="text" [(ngModel)]="category.description" placeholder="Breve explicación de la categoría..." class="input-control" />
@@ -40,7 +47,7 @@ import { RequestCategory } from '../../../core/models/index';
             </label>
             <label class="checkbox-label">
               <input type="checkbox" [(ngModel)]="category.is_absence" />
-              Clasificar como falta para topes y gráficas
+              Clasificar como justificación de falta
             </label>
           </div>
         </div>
@@ -71,6 +78,9 @@ import { RequestCategory } from '../../../core/models/index';
             <span class="rule-pill" [class.req]="cat.requires_document">
               {{ cat.requires_document ? 'Documento Obligatorio' : 'Documento Opcional' }}
             </span>
+            @if (cat.is_absence) {
+              <span class="rule-pill">Hasta {{ cat.maximum_past_days ?? 0 }} día(s) para justificar una falta pasada</span>
+            }
           </div>
 
           <div class="cat-actions">
@@ -247,6 +257,7 @@ export class HrCategoriesComponent implements OnInit {
     requires_document: false,
     is_absence: false,
     minimum_advance_days: 0,
+    maximum_past_days: 7,
   };
 
   ngOnInit(): void {
@@ -282,6 +293,7 @@ export class HrCategoriesComponent implements OnInit {
       requires_document: false,
       is_absence: false,
       minimum_advance_days: 0,
+      maximum_past_days: 7,
     };
   }
 

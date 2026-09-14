@@ -67,6 +67,7 @@ export interface RequestCategory {
   description?: string;
   requires_document: boolean;
   minimum_advance_days: number;
+  maximum_past_days?: number;
   is_absence?: boolean;
   active: boolean;
 }

@@ -9,7 +9,7 @@ const MOCK_CATEGORIES: RequestCategory[] = [
   { id: 1, name: 'Vacaciones', description: 'Solicitud de días de vacaciones anuales', requires_document: false, minimum_advance_days: 15, active: true },
   { id: 2, name: 'Salud', description: 'Cita médica, hospitalización o descanso médico', requires_document: true, minimum_advance_days: 0, active: true },
   { id: 3, name: 'Motivo personal', description: 'Permiso por asuntos personales', requires_document: false, minimum_advance_days: 2, active: true },
-  { id: 4, name: 'Justificación de falta', description: 'Justificación de una ausencia ocurrida', requires_document: true, minimum_advance_days: 0, active: true },
+  { id: 4, name: 'Justificación de falta', description: 'Justificación de una ausencia ocurrida', requires_document: true, minimum_advance_days: 0, maximum_past_days: 7, is_absence: true, active: true },
   { id: 5, name: 'Licencia', description: 'Licencia por maternidad, paternidad u otros', requires_document: true, minimum_advance_days: 5, active: true },
 ];
 

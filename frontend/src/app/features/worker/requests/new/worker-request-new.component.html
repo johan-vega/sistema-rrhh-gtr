@@ -38,6 +38,9 @@
           @if (cat.minimum_advance_days > 0) {
             <p><strong>Anticipación requerida:</strong> {{ cat.minimum_advance_days }} día(s)</p>
           }
+          @if (cat.is_absence) {
+            <p><strong>Justificación retroactiva:</strong> hasta {{ cat.maximum_past_days ?? 0 }} día(s) después de la falta</p>
+          }
           @if (cat.requires_document) {
             <p><strong>Documento:</strong> Obligatorio</p>
           } @else {
@@ -62,7 +65,7 @@
           Fecha inicial <span class="required">*</span>
         </label>
         <input id="start_date" type="date" class="form-control" formControlName="start_date"
-          [min]="today" [class.is-invalid]="startCtrl.invalid && startCtrl.touched" />
+          [min]="minimumSelectableDate" [class.is-invalid]="startCtrl.invalid && startCtrl.touched" />
         @if (startCtrl.invalid && startCtrl.touched) {
           <span class="form-error">Fecha requerida.</span>
         }
@@ -72,7 +75,7 @@
           Fecha final <span class="required">*</span>
         </label>
         <input id="end_date" type="date" class="form-control" formControlName="end_date"
-          [min]="form.get('start_date')?.value || today" [class.is-invalid]="endCtrl.invalid && endCtrl.touched" />
+          [min]="form.get('start_date')?.value || minimumSelectableDate" [class.is-invalid]="endCtrl.invalid && endCtrl.touched" />
         @if (endCtrl.invalid && endCtrl.touched) {
           <span class="form-error">Fecha requerida.</span>
         }
@@ -110,8 +113,8 @@
         <label class="file-upload-zone" for="doc-upload">
           <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></div>
           <p class="upload-text">Selecciona un archivo</p>
-          <p class="upload-hint">PDF, JPG o PNG — Máx. 5 MB</p>
-          <input id="doc-upload" type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileChange($event)" />
+          <p class="upload-hint">PDF o imagen (JPG, PNG, WEBP, HEIC) — Máx. 10 MB</p>
+          <input id="doc-upload" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif" (change)="onFileChange($event)" />
         </label>
       } @else {
         <div class="file-preview">
