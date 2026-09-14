@@ -53,7 +53,15 @@
         </div>
         <div class="info-item full" *ngIf="request()!.document_url">
           <span class="label">Documento Adjunto:</span>
-          <button type="button" (click)="openDocument()" class="doc-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 4px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Ver Documento Adjunto</button>
+          <button type="button" (click)="openDocument()" class="doc-link"><svg viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" width="16" height="16"
+              style="vertical-align: middle; margin-right: 4px;">
+              <path
+                d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+            </svg> Ver Documento Adjunto</button>
+          <button type="button" (click)="downloadDocument()" class="doc-link">
+            Descargar Documento
+          </button>
           @if (documentError()) { <span class="doc-error">{{ documentError() }}</span> }
         </div>
         <div class="info-item full" *ngIf="request()!.status === 'REJECTED' && request()!.rrhh_observation">
@@ -73,25 +81,12 @@
     </div>
   </div>
 
-  <app-confirm-dialog
-    *ngIf="showApprove()"
-    title="Aprobar Solicitud"
-    message="¿Confirmas la aprobación de esta solicitud?"
-    confirmLabel="Aprobar"
-    confirmClass="btn-success"
-    (confirmed)="doApprove()"
-    (dismissed)="dismissDialogs()"
-  ></app-confirm-dialog>
+  <app-confirm-dialog *ngIf="showApprove()" title="Aprobar Solicitud"
+    message="¿Confirmas la aprobación de esta solicitud?" confirmLabel="Aprobar" confirmClass="btn-success"
+    (confirmed)="doApprove()" (dismissed)="dismissDialogs()"></app-confirm-dialog>
 
-  <app-confirm-dialog
-    *ngIf="showReject()"
-    title="Rechazar Solicitud"
-    message="Ingresa el motivo del rechazo para notificar al trabajador."
-    inputLabel="Motivo de rechazo"
-    inputPlaceholder="Ej: Falta documento justificatorio..."
-    confirmLabel="Rechazar"
-    confirmClass="btn-danger"
-    (confirmed)="doReject($event)"
-    (dismissed)="dismissDialogs()"
-  ></app-confirm-dialog>
+  <app-confirm-dialog *ngIf="showReject()" title="Rechazar Solicitud"
+    message="Ingresa el motivo del rechazo para notificar al trabajador." inputLabel="Motivo de rechazo"
+    inputPlaceholder="Ej: Falta documento justificatorio..." confirmLabel="Rechazar" confirmClass="btn-danger"
+    (confirmed)="doReject($event)" (dismissed)="dismissDialogs()"></app-confirm-dialog>
 </div>

@@ -78,6 +78,7 @@ export function mapRequest(request: any): LeaveRequest {
     request_date: request.requested_at ?? request.request_date,
     response_date: request.responded_at ?? request.response_date ?? undefined,
     document_url: request.documents?.[0]?.download_url,
+    document_name: request.documents?.[0]?.original_name,
     rrhh_observation: request.hr_observation ?? request.rrhh_observation ?? undefined,
     history: request.history?.map(mapHistory),
   };
