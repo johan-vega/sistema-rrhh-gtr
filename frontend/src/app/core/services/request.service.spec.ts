@@ -39,6 +39,18 @@ describe('RequestService', () => {
     expect(form.get('reason')).toBe('Justificación por una falta médica.');
     expect(form.get('documents[]')).toBe(image);
 
-    request.flush({ success: true, message: 'OK', data: {} });
+    request.flush({
+      success: true,
+      message: 'OK',
+      data: {
+        id: 1,
+        category: { id: 4, name: 'Justificación de falta', requires_document: true, minimum_notice_days: 0, active: true },
+        start_date: '2026-09-14',
+        end_date: '2026-09-14',
+        reason: 'Justificación por una falta médica.',
+        status: 'PENDIENTE',
+        requested_at: '2026-09-14T12:00:00Z',
+      },
+    });
   });
 });

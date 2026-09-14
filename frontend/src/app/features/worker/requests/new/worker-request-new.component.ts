@@ -27,7 +27,7 @@ export class WorkerRequestNewComponent implements OnInit {
   today            = new Date().toISOString().split('T')[0];
 
   form = this.fb.group({
-    category_id: ['', Validators.required],
+    category_id: this.fb.control<number | null>(null, Validators.required),
     start_date:  ['', Validators.required],
     end_date:    ['', Validators.required],
     reason:      ['', [Validators.required, Validators.minLength(5)]],
@@ -99,8 +99,23 @@ export class WorkerRequestNewComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid || this.loading()) return;
-    const cat = this.selectedCategory();
+    if (this.loading()) return;
+
+    const selected = this.selectedCategory();
+    const categoryControl = this.form.get('category_id')!;
+    // Algunos selectores nativos móviles conservan la opción visual al volver
+    // del selector de archivos. Restituimos su valor desde la categoría elegida.
+    if (selected && !categoryControl.value) {
+      categoryControl.setValue(selected.id);
+    }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.error.set('Completa los campos obligatorios antes de enviar la solicitud.');
+      return;
+    }
+
+    const raw = this.form.getRawValue();
+    const cat = selected ?? this.categories().find(item => item.id === Number(raw.category_id)) ?? null;
     if (cat?.requires_document && !this.selectedFile()) {
       this.error.set('Esta categoría requiere adjuntar un documento.');
       return;
@@ -108,9 +123,8 @@ export class WorkerRequestNewComponent implements OnInit {
     this.error.set('');
     this.loading.set(true);
 
-    const raw = this.form.getRawValue();
     this.reqSvc.create({
-      category_id: Number(raw.category_id),
+      category_id: cat?.id ?? Number(raw.category_id),
       start_date: raw.start_date!,
       end_date: raw.end_date!,
       reason: raw.reason!,

@@ -22,7 +22,7 @@
         [class.is-invalid]="categoryCtrl.invalid && categoryCtrl.touched">
         <option value="">— Selecciona una categoría —</option>
         @for (cat of categories(); track cat.id) {
-          <option [value]="cat.id">{{ cat.name }}</option>
+          <option [ngValue]="cat.id">{{ cat.name }}</option>
         }
       </select>
       @if (categoryCtrl.invalid && categoryCtrl.touched) {
