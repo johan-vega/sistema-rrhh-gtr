@@ -94,6 +94,25 @@ class LaborRequestApiTest extends TestCase
         $this->assertDatabaseCount('request_documents', 1);
     }
 
+    public function test_document_category_accepts_mobile_image_attachments(): void
+    {
+        $user = $this->worker();
+        $category = $this->category(['requires_document' => true]);
+        Sanctum::actingAs($user);
+
+        $this->post('/api/requests', array_merge($this->payload($category), [
+            'documents' => [UploadedFile::fake()->create('sustento.webp', 100, 'image/webp')],
+        ]), ['Accept' => 'application/json'])->assertCreated();
+
+        $this->assertDatabaseHas('request_documents', ['original_name' => 'sustento.webp']);
+
+        $this->post('/api/requests', array_merge($this->payload($category), [
+            'documents' => [UploadedFile::fake()->create('sustento.heic', 100, 'image/heic')],
+        ]), ['Accept' => 'application/json'])->assertCreated();
+
+        $this->assertDatabaseHas('request_documents', ['original_name' => 'sustento.heic']);
+    }
+
     public function test_document_download_requires_authentication_without_redirecting_to_login(): void
     {
         $user = $this->worker();
@@ -151,6 +170,35 @@ class LaborRequestApiTest extends TestCase
         $category = $this->category(['minimum_notice_days' => 15]);
         Sanctum::actingAs($user);
         $this->postJson('/api/requests', $this->payload($category, ['start_date' => today()->addDays(14)->toDateString()]))->assertUnprocessable();
+    }
+
+    public function test_absence_justification_accepts_dates_within_its_configured_past_limit(): void
+    {
+        $user = $this->worker();
+        $category = $this->category([
+            'is_absence' => true,
+            'requires_document' => true,
+            'maximum_past_days' => 7,
+        ]);
+        Sanctum::actingAs($user);
+
+        $withinLimit = today()->subDays(7)->toDateString();
+        $this->post('/api/requests', array_merge($this->payload($category, [
+            'start_date' => $withinLimit,
+            'end_date' => $withinLimit,
+        ]), [
+            'documents' => [UploadedFile::fake()->create('justificacion.webp', 100, 'image/webp')],
+        ]), ['Accept' => 'application/json'])->assertCreated();
+
+        $outsideLimit = today()->subDays(8)->toDateString();
+        $this->post('/api/requests', array_merge($this->payload($category, [
+            'start_date' => $outsideLimit,
+            'end_date' => $outsideLimit,
+        ]), [
+            'documents' => [UploadedFile::fake()->create('justificacion.pdf', 100, 'application/pdf')],
+        ]), ['Accept' => 'application/json'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('start_date');
     }
 
     public function test_worker_cannot_view_another_workers_request(): void

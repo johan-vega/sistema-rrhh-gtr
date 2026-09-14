@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Vacaciones', 'description' => 'Solicitud de vacaciones', 'requires_document' => true, 'minimum_notice_days' => 15, 'allow_approved_cancellation' => false],
             ['name' => 'Salud', 'description' => 'Permiso por salud', 'requires_document' => true, 'minimum_notice_days' => 0, 'allow_approved_cancellation' => true],
             ['name' => 'Motivo personal', 'description' => 'Permiso por motivo personal', 'requires_document' => false, 'minimum_notice_days' => 2, 'allow_approved_cancellation' => false],
-            ['name' => 'Justificación de falta', 'description' => 'Sustento de una falta', 'requires_document' => true, 'minimum_notice_days' => 0, 'allow_approved_cancellation' => false],
+            ['name' => 'Justificación de falta', 'description' => 'Sustento de una falta', 'requires_document' => true, 'minimum_notice_days' => 0, 'maximum_past_days' => 7, 'is_absence' => true, 'allow_approved_cancellation' => false],
         ] as $category) {
             RequestCategory::firstOrCreate(['name' => $category['name']], $category);
         }

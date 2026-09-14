@@ -31,6 +31,7 @@ export function mapCategory(category: any): RequestCategory {
     description: category.description ?? undefined,
     requires_document: Boolean(category.requires_document),
     minimum_advance_days: category.minimum_notice_days ?? category.minimum_advance_days ?? 0,
+    maximum_past_days: category.maximum_past_days ?? 0,
     is_absence: Boolean(category.is_absence),
     active: Boolean(category.active),
   };

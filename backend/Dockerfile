@@ -23,6 +23,7 @@ RUN apt-get update \
 COPY . ./
 COPY --from=dependencies /app/vendor ./vendor
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY docker/php-upload.ini /usr/local/etc/php/conf.d/php-upload.ini
 
 RUN chmod +x /usr/local/bin/docker-entrypoint \
     && chown -R www-data:www-data storage bootstrap/cache
