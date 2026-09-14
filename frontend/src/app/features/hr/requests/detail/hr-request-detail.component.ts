@@ -16,17 +16,17 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/ui.compon
   styleUrl: './hr-request-detail.component.scss',
 })
 export class HrRequestDetailComponent implements OnInit {
-  private route  = inject(ActivatedRoute);
+  private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private svc    = inject(HrRequestService);
+  private svc = inject(HrRequestService);
   private documents = inject(DocumentService);
 
-  loading       = signal(true);
-  processing    = signal(false);
-  request       = signal<LeaveRequest | null>(null);
-  showApprove   = signal(false);
-  showReject    = signal(false);
-  observation   = '';
+  loading = signal(true);
+  processing = signal(false);
+  request = signal<LeaveRequest | null>(null);
+  showApprove = signal(false);
+  showReject = signal(false);
+  observation = '';
   documentError = signal('');
 
   get isActionable() {
@@ -37,7 +37,7 @@ export class HrRequestDetailComponent implements OnInit {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.svc.getById(id).subscribe({
       next: res => { this.request.set(res.data); this.loading.set(false); },
-      error: ()  => this.loading.set(false),
+      error: () => this.loading.set(false),
     });
   }
 
@@ -46,7 +46,7 @@ export class HrRequestDetailComponent implements OnInit {
   }
 
   confirmApprove(): void { this.showApprove.set(true); }
-  confirmReject():  void { this.showReject.set(true); }
+  confirmReject(): void { this.showReject.set(true); }
   dismissDialogs(): void { this.showApprove.set(false); this.showReject.set(false); }
 
   doApprove(): void {
@@ -54,7 +54,7 @@ export class HrRequestDetailComponent implements OnInit {
     this.processing.set(true);
     this.svc.approve(this.request()!.id).subscribe({
       next: res => { this.request.set(res.data); this.processing.set(false); },
-      error: ()  => this.processing.set(false),
+      error: () => this.processing.set(false),
     });
   }
 
@@ -64,7 +64,7 @@ export class HrRequestDetailComponent implements OnInit {
     this.processing.set(true);
     this.svc.reject(this.request()!.id, { observation: obs }).subscribe({
       next: res => { this.request.set(res.data); this.processing.set(false); },
-      error: ()  => this.processing.set(false),
+      error: () => this.processing.set(false),
     });
   }
 
@@ -86,6 +86,33 @@ export class HrRequestDetailComponent implements OnInit {
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
       },
       error: () => { tab?.close(); this.documentError.set('No se pudo abrir el documento adjunto. Inténtalo nuevamente.'); },
+    });
+  }
+  downloadDocument(): void {
+    const url = this.request()?.document_url;
+    if (!url) return;
+
+    this.documentError.set('');
+
+    this.documents.get(url).subscribe({
+      next: file => {
+        const objectUrl = URL.createObjectURL(file);
+
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = 'documento-adjunto';
+        document.body.appendChild(link);
+
+        link.click();
+        link.remove();
+
+        URL.revokeObjectURL(objectUrl);
+      },
+      error: () => {
+        this.documentError.set(
+          'No se pudo descargar el documento adjunto.'
+        );
+      },
     });
   }
 }

@@ -89,6 +89,7 @@ export interface LeaveRequest {
   request_date: string;
   response_date?: string;
   document_url?: string;
+  document_name?: string;
   rrhh_observation?: string;
   history?: RequestHistoryEntry[];
 }
