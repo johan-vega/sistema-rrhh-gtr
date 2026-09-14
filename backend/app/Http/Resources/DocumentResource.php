@@ -11,6 +11,8 @@ class DocumentResource extends JsonResource
     {
         $baseUrl = $request->user()?->isHr() ? '/api/hr/requests' : '/api/requests';
 
-        return ['id' => $this->id, 'original_name' => $this->original_name, 'mime_type' => $this->mime_type, 'size' => $this->size, 'download_url' => url("{$baseUrl}/{$this->labor_request_id}/documents/{$this->id}")];
+        return ['id' => $this->id, 'original_name' => $this->original_name, 'mime_type' => $this->mime_type, 'size' => $this->size, 'download_url' => secure_url(
+            "{$baseUrl}/{$this->labor_request_id}/documents/{$this->id}"
+        )];
     }
 }
