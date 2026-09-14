@@ -1,0 +1,10 @@
+# El backend se despliega desde el mismo monorepo; estos cambios no requieren
+# reconstruir la API Laravel en Koyeb.
+frontend/**
+docs/**
+
+# Nunca enviar configuraciones locales ni archivos generados.
+**/.env
+**/node_modules/**
+**/vendor/**
+**/storage/logs/**

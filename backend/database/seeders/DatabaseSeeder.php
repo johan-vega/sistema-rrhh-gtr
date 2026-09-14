@@ -6,7 +6,6 @@ use App\Models\Area;
 use App\Models\Position;
 use App\Models\RequestCategory;
 use App\Models\Role;
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -19,9 +18,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $hr = Role::firstOrCreate(['code' => Role::HR], ['name' => 'Recursos Humanos']);
+        Role::firstOrCreate(['code' => Role::HR], ['name' => 'Recursos Humanos']);
         Role::firstOrCreate(['code' => Role::WORKER], ['name' => 'Trabajador']);
-        User::firstOrCreate(['email' => 'rrhh@gtr.test'], ['name' => 'Administrador RRHH', 'password' => 'Password123!', 'role_id' => $hr->id]);
         foreach (['Administración', 'Operaciones', 'Tecnología'] as $name) {
             Area::firstOrCreate(['name' => $name]);
         }

@@ -30,8 +30,6 @@ class LaborRequestService
         if ($category->requires_document && count($files) === 0) {
             throw ValidationException::withMessages(['documents' => ['Esta categoría requiere al menos un documento.']]);
         }
-        $this->enforceMonthlyLimit($worker, $category, $start);
-
         return DB::transaction(function () use ($worker, $data, $files, $actor, $category) {
             $request = LaborRequest::create(['worker_id' => $worker->id, 'category_id' => $category->id, 'start_date' => $data['start_date'], 'end_date' => $data['end_date'], 'reason' => $data['reason'], 'status' => RequestStatus::PENDING, 'requested_at' => now()]);
             foreach ($files as $file) {
@@ -76,32 +74,8 @@ class LaborRequestService
 
     private function storeDocument(LaborRequest $request, UploadedFile $file): void
     {
-        $path = $file->store("request-documents/{$request->id}", 'local');
+        $path = $file->store("request-documents/{$request->id}", config('filesystems.default'));
         $request->documents()->create(['original_name' => $file->getClientOriginalName(), 'stored_name' => basename($path), 'path' => $path, 'mime_type' => $file->getMimeType() ?? 'application/octet-stream', 'size' => $file->getSize()]);
-    }
-
-    private function enforceMonthlyLimit(Worker $worker, RequestCategory $category, Carbon $start): void
-    {
-        $worker->loadMissing('area');
-        $field = $category->is_absence ? 'monthly_absence_limit' : 'monthly_permission_limit';
-        $type = $category->is_absence ? 'faltas' : 'permisos';
-        $monthStart = $start->copy()->startOfMonth();
-        $monthEnd = $start->copy()->endOfMonth();
-
-        $matchingRequests = LaborRequest::query()
-            ->whereBetween('start_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->whereNotIn('status', [RequestStatus::REJECTED->value, RequestStatus::CANCELLED->value])
-            ->whereHas('category', fn ($query) => $query->where('is_absence', $category->is_absence));
-
-        $workerLimit = $worker->{$field};
-        if ($workerLimit && (clone $matchingRequests)->where('worker_id', $worker->id)->count() >= $workerLimit) {
-            throw ValidationException::withMessages(['start_date' => ["El trabajador ya alcanzó su tope mensual de {$workerLimit} {$type}."]]);
-        }
-
-        $areaLimit = $worker->area?->{$field};
-        if ($areaLimit && (clone $matchingRequests)->whereHas('worker', fn ($query) => $query->where('area_id', $worker->area_id))->count() >= $areaLimit) {
-            throw ValidationException::withMessages(['start_date' => ["El área {$worker->area?->name} ya alcanzó su tope mensual de {$areaLimit} {$type}."]]);
-        }
     }
 
     private function history(LaborRequest $request, User $user, string $action, ?string $comment): void

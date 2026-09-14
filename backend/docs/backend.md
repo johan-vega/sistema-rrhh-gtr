@@ -13,10 +13,10 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-El entorno local está configurado para MySQL/MariaDB en la base `sistema_gtr`; ajuste las variables `DB_*` en `.env` según su instalación antes de migrar. Los adjuntos se guardan en el disco privado `local`; no ejecute `storage:link` para exponerlos. Ejecute `php artisan test` para las pruebas.
+El entorno local usa MySQL/MariaDB; ajuste las variables `DB_*` en `.env` según su instalación antes de migrar. Los adjuntos se guardan en el disco privado elegido por `FILESYSTEM_DISK` (`local` para desarrollo, `s3`/Cloudflare R2 en producción); no ejecute `storage:link` para exponerlos. Ejecute `php artisan test` para las pruebas.
 
 Configure `CORS_ALLOWED_ORIGINS=http://localhost:4200,http://127.0.0.1:4200` para Angular local. En producción use únicamente los orígenes HTTPS reales.
 
-Usuario semilla: `rrhh@gtr.test` / `Password123!` (solo desarrollo; cambiar antes de producción).
+El seeder no crea usuarios ni contraseñas. Cree la primera cuenta de RRHH de forma segura siguiendo [deployment.md](deployment.md#ejecución-local).
 
-> En esta instalación local MariaDB tiene dañada su tabla interna de privilegios, por lo que Laravel usa temporalmente el usuario local `root` sin contraseña. Antes de producción, repare MariaDB y cambie `DB_USERNAME`/`DB_PASSWORD` por una cuenta restringida a `sistema_gtr`.
+Para Koyeb, Aiven MySQL, Cloudflare R2 y las variables de producción consulte [deployment.md](deployment.md).
