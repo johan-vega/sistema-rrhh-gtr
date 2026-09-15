@@ -79,7 +79,7 @@ class LaborRequestApiTest extends TestCase
         $this->assertDatabaseHas('labor_requests', ['worker_id' => $user->worker->id, 'status' => 'PENDIENTE']);
     }
 
-    public function test_request_uses_mobile_metadata_as_a_multipart_fallback(): void
+    public function test_metadata_from_older_frontend_versions_remains_supported(): void
     {
         $user = $this->worker();
         $category = $this->category(['requires_document' => true]);
@@ -96,6 +96,46 @@ class LaborRequestApiTest extends TestCase
             ]), ['Accept' => 'application/json'])
             ->assertCreated()
             ->assertJsonPath('data.category.id', $category->id);
+    }
+
+    public function test_empty_multipart_reports_transport_failure_without_creating_a_request(): void
+    {
+        Sanctum::actingAs($this->worker());
+        $this->post('/api/requests?ngsw-bypass=true', [], [
+            'Accept' => 'application/json',
+            'Content-Type' => 'multipart/form-data; boundary=test-boundary',
+        ])->assertStatus(400)->assertJsonPath('code', 'EMPTY_MULTIPART')->assertJsonPath('success', false);
+
+        $this->assertDatabaseCount('labor_requests', 0);
+        $this->assertDatabaseCount('request_documents', 0);
+    }
+
+    public function test_bypass_parameter_accepts_normal_fields_and_a_2_4_mb_attachment_without_metadata(): void
+    {
+        Storage::fake(config('filesystems.default'));
+        Sanctum::actingAs($this->worker());
+        $category = $this->category(['requires_document' => true]);
+        $payload = $this->payload($category, ['reason' => 'Justificación de falta médica.']);
+
+        $this->post('/api/requests?ngsw-bypass=true', array_merge($payload, [
+            'documents' => [UploadedFile::fake()->create('foto.jpg', 2458, 'image/jpeg')],
+        ]), ['Accept' => 'application/json', 'Content-Type' => 'multipart/form-data; boundary=test-boundary'])
+            ->assertCreated()->assertJsonPath('data.category.id', $category->id);
+
+        $this->assertDatabaseCount('labor_requests', 1);
+        $this->assertDatabaseHas('labor_requests', $payload);
+        $this->assertDatabaseHas('request_documents', ['original_name' => 'foto.jpg', 'size' => 2458 * 1024]);
+    }
+
+    public function test_bypass_does_not_make_a_required_document_optional(): void
+    {
+        Sanctum::actingAs($this->worker());
+        $category = $this->category(['requires_document' => true]);
+        $this->post('/api/requests?ngsw-bypass=true', $this->payload($category), [
+            'Accept' => 'application/json', 'Content-Type' => 'multipart/form-data; boundary=test-boundary',
+        ])->assertUnprocessable()->assertJsonPath('success', false);
+
+        $this->assertDatabaseCount('labor_requests', 0);
     }
 
     public function test_document_is_required_when_category_requires_it(): void

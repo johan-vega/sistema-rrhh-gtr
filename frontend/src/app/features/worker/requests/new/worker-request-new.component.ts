@@ -1,13 +1,14 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CategoryService } from '../../../../core/services/category.service';
 import { RequestService } from '../../../../core/services/request.service';
 import { RequestCategory } from '../../../../core/models/index';
 
 @Component({
   selector: 'app-worker-request-new',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './worker-request-new.component.html',
   styleUrl: './worker-request-new.component.scss',
 })
@@ -71,6 +72,7 @@ export class WorkerRequestNewComponent implements OnInit {
   }
 
   onFileChange(event: Event): void {
+    if (this.loading()) return;
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -80,17 +82,28 @@ export class WorkerRequestNewComponent implements OnInit {
     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
     if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(extension ?? '')) {
       this.error.set('Solo se permiten archivos PDF, JPG, PNG, WEBP o HEIC.');
+      input.value = '';
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
       this.error.set('El archivo no debe superar 10 MB.');
+      input.value = '';
+      return;
+    }
+    if (file.size === 0) {
+      this.error.set('El archivo está vacío. Selecciona otro documento.');
+      input.value = '';
       return;
     }
     this.error.set('');
     this.selectedFile.set(file);
   }
 
-  removeFile(): void { this.selectedFile.set(null); }
+  removeFile(input: HTMLInputElement): void {
+    if (this.loading()) return;
+    this.selectedFile.set(null);
+    input.value = '';
+  }
 
   formatFileSize(bytes: number): string {
     if (bytes < 1024) return bytes + ' B';
@@ -101,13 +114,6 @@ export class WorkerRequestNewComponent implements OnInit {
   onSubmit(): void {
     if (this.loading()) return;
 
-    const selected = this.selectedCategory();
-    const categoryControl = this.form.get('category_id')!;
-    // Algunos selectores nativos móviles conservan la opción visual al volver
-    // del selector de archivos. Restituimos su valor desde la categoría elegida.
-    if (selected && !categoryControl.value) {
-      categoryControl.setValue(selected.id);
-    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.error.set('Completa los campos obligatorios antes de enviar la solicitud.');
@@ -115,7 +121,11 @@ export class WorkerRequestNewComponent implements OnInit {
     }
 
     const raw = this.form.getRawValue();
-    const cat = selected ?? this.categories().find(item => item.id === Number(raw.category_id)) ?? null;
+    const cat = this.categories().find(item => item.id === Number(raw.category_id));
+    if (!cat) {
+      this.error.set('Selecciona un tipo de solicitud disponible.');
+      return;
+    }
     if (cat?.requires_document && !this.selectedFile()) {
       this.error.set('Esta categoría requiere adjuntar un documento.');
       return;
@@ -124,7 +134,7 @@ export class WorkerRequestNewComponent implements OnInit {
     this.loading.set(true);
 
     this.reqSvc.create({
-      category_id: cat?.id ?? Number(raw.category_id),
+      category_id: cat.id,
       start_date: raw.start_date!,
       end_date: raw.end_date!,
       reason: raw.reason!,
@@ -156,6 +166,7 @@ export class WorkerRequestNewComponent implements OnInit {
   }
 
   private getRequestError(error: any): string {
+    if (error instanceof Error && !(error instanceof HttpErrorResponse)) return error.message;
     const errors = error?.error?.errors as Record<string, string[]> | undefined;
     const message = Object.values(errors ?? {}).flat()[0] ?? error?.error?.message;
     const safeMessages: Record<string, string> = {

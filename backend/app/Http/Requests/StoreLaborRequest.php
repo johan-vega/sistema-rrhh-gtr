@@ -2,10 +2,25 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Http\Exceptions\HttpResponseException;
+
 class StoreLaborRequest extends ApiRequest
 {
     protected function prepareForValidation(): void
     {
+        // Un multipart vacío indica un fallo de transporte/lectura del archivo,
+        // no que el trabajador haya dejado sin elegir el tipo de solicitud.
+        if (str_starts_with(strtolower($this->header('Content-Type', '')), 'multipart/form-data')
+            && $this->request->count() === 0 && $this->files->count() === 0) {
+            throw new HttpResponseException(response()->json([
+                'success' => false,
+                'code' => 'EMPTY_MULTIPART',
+                'message' => 'El formulario llegó vacío al servidor. No se guardó la solicitud. Vuelve a seleccionar el documento e inténtalo nuevamente.',
+            ], 400));
+        }
+
+        // Compatibilidad con versiones anteriores del frontend. No recupera
+        // un cuerpo perdido por completo; el frontend nuevo ya no lo necesita.
         $metadata = $this->mobileRequestMetadata();
         $missing = [];
 
