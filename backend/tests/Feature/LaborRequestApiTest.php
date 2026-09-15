@@ -77,16 +77,18 @@ class LaborRequestApiTest extends TestCase
         $this->assertDatabaseHas('labor_requests', ['worker_id' => $user->worker->id, 'status' => 'PENDIENTE']);
     }
 
-    public function test_request_uses_the_category_header_as_a_mobile_multipart_fallback(): void
+    public function test_request_uses_mobile_metadata_as_a_multipart_fallback(): void
     {
         $user = $this->worker();
         $category = $this->category(['requires_document' => true]);
         Sanctum::actingAs($user);
 
         $payload = $this->payload($category);
-        unset($payload['category_id']);
+        $metadata = $payload;
+        unset($payload['category_id'], $payload['start_date'], $payload['end_date'], $payload['reason']);
+        $encodedMetadata = rtrim(strtr(base64_encode(json_encode($metadata)), '+/', '-_'), '=');
 
-        $this->withHeader('X-Request-Category-Id', (string) $category->id)
+        $this->withHeader('X-Request-Metadata', $encodedMetadata)
             ->post('/api/requests', array_merge($payload, [
                 'documents' => [UploadedFile::fake()->create('sustento.jpg', 100, 'image/jpeg')],
             ]), ['Accept' => 'application/json'])

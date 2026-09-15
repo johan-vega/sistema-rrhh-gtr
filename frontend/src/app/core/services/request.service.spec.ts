@@ -32,7 +32,18 @@ describe('RequestService', () => {
     const form = request.request.body as FormData;
 
     expect(request.request.method).toBe('POST');
-    expect(request.request.headers.get('X-Request-Category-Id')).toBe('4');
+    const encodedMetadata = request.request.headers.get('X-Request-Metadata');
+    expect(encodedMetadata).toBeTruthy();
+    const base64 = encodedMetadata!.replaceAll('-', '+').replaceAll('_', '/');
+    const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+    const binary = atob(paddedBase64);
+    const decodedMetadata = new TextDecoder().decode(Uint8Array.from(binary, character => character.charCodeAt(0)));
+    expect(JSON.parse(decodedMetadata)).toEqual({
+      category_id: 4,
+      start_date: '2026-09-14',
+      end_date: '2026-09-14',
+      reason: 'Justificación por una falta médica.',
+    });
     expect(form).toBeInstanceOf(FormData);
     expect(form.get('category_id')).toBe('4');
     expect(form.get('start_date')).toBe('2026-09-14');
