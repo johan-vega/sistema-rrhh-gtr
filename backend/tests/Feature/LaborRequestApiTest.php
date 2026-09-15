@@ -77,6 +77,23 @@ class LaborRequestApiTest extends TestCase
         $this->assertDatabaseHas('labor_requests', ['worker_id' => $user->worker->id, 'status' => 'PENDIENTE']);
     }
 
+    public function test_request_uses_the_category_header_as_a_mobile_multipart_fallback(): void
+    {
+        $user = $this->worker();
+        $category = $this->category(['requires_document' => true]);
+        Sanctum::actingAs($user);
+
+        $payload = $this->payload($category);
+        unset($payload['category_id']);
+
+        $this->withHeader('X-Request-Category-Id', (string) $category->id)
+            ->post('/api/requests', array_merge($payload, [
+                'documents' => [UploadedFile::fake()->create('sustento.jpg', 100, 'image/jpeg')],
+            ]), ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('data.category.id', $category->id);
+    }
+
     public function test_document_is_required_when_category_requires_it(): void
     {
         $user = $this->worker();
