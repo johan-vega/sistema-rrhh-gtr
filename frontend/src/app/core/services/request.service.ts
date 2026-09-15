@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, of } from 'rxjs';
+import { Observable, defer, map, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   LeaveRequest, CreateRequestPayload, RejectRequestPayload,
@@ -82,22 +82,14 @@ export class RequestService {
       };
       return of({ success: true, message: 'Solicitud enviada correctamente', data: newReq });
     }
-    const form = new FormData();
-    form.append('category_id', String(payload.category_id));
-    form.append('start_date', payload.start_date);
-    form.append('end_date', payload.end_date);
-    form.append('reason', payload.reason);
-    if (payload.document) form.append('documents[]', payload.document);
-    // Algunos navegadores móviles pueden conservar visualmente valores al
-    // volver del selector de archivos y omitirlos en el multipart. Esta parte
-    // estándar del formulario conserva los campos y no genera un nuevo CORS.
-    form.append('_request_metadata', this.encodeRequestMetadata({
-        category_id: payload.category_id,
-        start_date: payload.start_date,
-        end_date: payload.end_date,
-        reason: payload.reason,
-    }));
-    return this.http.post<ApiResponse<any>>(this.apiUrl, form).pipe(map(res => mapResponse(res, mapRequest)));
+    return defer(() => this.prepareForm(payload)).pipe(
+      // Evita que Angular SW vuelva a transmitir el multipart. El parámetro
+      // funciona también con el SW ya instalado y no añade cabeceras CORS.
+      switchMap(form => this.http.post<ApiResponse<any>>(this.apiUrl, form, {
+        params: { 'ngsw-bypass': 'true' },
+      })),
+      map(res => mapResponse(res, mapRequest)),
+    );
   }
 
   cancel(id: number): Observable<ApiResponse<LeaveRequest>> {
@@ -113,14 +105,48 @@ export class RequestService {
     return ({ PENDING: 'PENDIENTE', APPROVED: 'APROBADA', REJECTED: 'RECHAZADA', CANCELLED: 'CANCELADA' } as const)[status as RequestStatus] ?? '';
   }
 
-  private encodeRequestMetadata(metadata: Record<string, string | number>): string {
-    const bytes = new TextEncoder().encode(JSON.stringify(metadata));
-    let binary = '';
-    bytes.forEach(byte => binary += String.fromCharCode(byte));
+  private async prepareForm(payload: CreateRequestPayload): Promise<FormData> {
+    const form = new FormData();
+    form.append('category_id', String(payload.category_id));
+    form.append('start_date', payload.start_date);
+    form.append('end_date', payload.end_date);
+    form.append('reason', payload.reason);
 
-    return btoa(binary)
-      .replaceAll('+', '-')
-      .replaceAll('/', '_')
-      .replace(/=+$/, '');
+    if (payload.document) {
+      const document = payload.document;
+      if (document.size === 0) throw new Error('El archivo está vacío. Selecciona otro documento.');
+      if (document.size > 10 * 1024 * 1024) throw new Error('El archivo no debe superar 10 MB.');
+
+      // WebKit puede enviar TODO el formulario vacío al serializar un File
+      // respaldado por disco en una PWA. Leemos los bytes y enviamos un Blob
+      // en memoria, no el File original ni new Blob([document]).
+      // Referencia: https://bugs.webkit.org/show_bug.cgi?id=319985
+      const bytes = await this.readDocument(document);
+      form.append('documents[]', new Blob([bytes], { type: document.type }), document.name);
+    }
+
+    return form;
+  }
+
+  private readDocument(document: File): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      const fail = () => reject(new Error('No se pudo leer el documento. Vuelve a seleccionarlo antes de enviar.'));
+      reader.onerror = fail;
+      reader.onabort = fail;
+      reader.onload = () => {
+        const bytes = reader.result;
+        if (!(bytes instanceof ArrayBuffer) || bytes.byteLength !== document.size) {
+          fail();
+          return;
+        }
+        resolve(bytes);
+      };
+      try {
+        reader.readAsArrayBuffer(document);
+      } catch {
+        fail();
+      }
+    });
   }
 }

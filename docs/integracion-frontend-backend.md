@@ -121,6 +121,8 @@ El logo temporal está en `frontend/public/assets/logo-generico-gtr.png`. Para u
 
 ## Reglas de trabajo
 
+Para el diagnóstico de errores al adjuntar documentos desde iPhone, la publicación conjunta y las pruebas de transporte, consultar [Subida de documentos desde iOS](subida-documentos-ios.md).
+
 - Los tokens de sesión se guardan en el almacenamiento del navegador; no deben subirse al repositorio.
 - Los documentos se guardan privados en Laravel y se descargan únicamente por endpoints autorizados.
 - RRHH crea usuarios trabajadores desde el módulo de trabajadores y debe asignar una contraseña inicial de al menos ocho caracteres.
