@@ -32,7 +32,7 @@ describe('RequestService', () => {
     const form = request.request.body as FormData;
 
     expect(request.request.method).toBe('POST');
-    const encodedMetadata = request.request.headers.get('X-Request-Metadata');
+    const encodedMetadata = form.get('_request_metadata') as string | null;
     expect(encodedMetadata).toBeTruthy();
     const base64 = encodedMetadata!.replaceAll('-', '+').replaceAll('_', '/');
     const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');

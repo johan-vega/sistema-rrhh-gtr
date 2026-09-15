@@ -27,7 +27,7 @@ class StoreLaborRequest extends ApiRequest
 
     private function mobileRequestMetadata(): array
     {
-        $encoded = $this->header('X-Request-Metadata');
+        $encoded = $this->input('_request_metadata');
         if (! is_string($encoded) || $encoded === '') {
             return [];
         }
