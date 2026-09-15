@@ -88,11 +88,16 @@ export class RequestService {
     form.append('end_date', payload.end_date);
     form.append('reason', payload.reason);
     if (payload.document) form.append('documents[]', payload.document);
-    // Safari puede preservar visualmente un <select> después del selector de
-    // archivos y omitir su valor en el multipart. La cabecera es un respaldo;
-    // Laravel aún comprueba que la categoría exista y esté activa.
+    // Algunos navegadores móviles pueden conservar visualmente valores al
+    // volver del selector de archivos y omitirlos en el multipart. La
+    // cabecera conserva los campos de control; Laravel los valida nuevamente.
     const headers = new HttpHeaders({
-      'X-Request-Category-Id': String(payload.category_id),
+      'X-Request-Metadata': this.encodeRequestMetadata({
+        category_id: payload.category_id,
+        start_date: payload.start_date,
+        end_date: payload.end_date,
+        reason: payload.reason,
+      }),
     });
     return this.http.post<ApiResponse<any>>(this.apiUrl, form, { headers }).pipe(map(res => mapResponse(res, mapRequest)));
   }
@@ -108,5 +113,16 @@ export class RequestService {
 
   private toBackendStatus(status?: RequestStatus | ''): string {
     return ({ PENDING: 'PENDIENTE', APPROVED: 'APROBADA', REJECTED: 'RECHAZADA', CANCELLED: 'CANCELADA' } as const)[status as RequestStatus] ?? '';
+  }
+
+  private encodeRequestMetadata(metadata: Record<string, string | number>): string {
+    const bytes = new TextEncoder().encode(JSON.stringify(metadata));
+    let binary = '';
+    bytes.forEach(byte => binary += String.fromCharCode(byte));
+
+    return btoa(binary)
+      .replaceAll('+', '-')
+      .replaceAll('/', '_')
+      .replace(/=+$/, '');
   }
 }
