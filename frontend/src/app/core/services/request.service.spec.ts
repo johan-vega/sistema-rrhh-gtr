@@ -32,6 +32,7 @@ describe('RequestService', () => {
     const form = request.request.body as FormData;
 
     expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('X-Request-Category-Id')).toBe('4');
     expect(form).toBeInstanceOf(FormData);
     expect(form.get('category_id')).toBe('4');
     expect(form.get('start_date')).toBe('2026-09-14');

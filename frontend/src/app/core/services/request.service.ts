@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -88,7 +88,13 @@ export class RequestService {
     form.append('end_date', payload.end_date);
     form.append('reason', payload.reason);
     if (payload.document) form.append('documents[]', payload.document);
-    return this.http.post<ApiResponse<any>>(this.apiUrl, form).pipe(map(res => mapResponse(res, mapRequest)));
+    // Safari puede preservar visualmente un <select> después del selector de
+    // archivos y omitir su valor en el multipart. La cabecera es un respaldo;
+    // Laravel aún comprueba que la categoría exista y esté activa.
+    const headers = new HttpHeaders({
+      'X-Request-Category-Id': String(payload.category_id),
+    });
+    return this.http.post<ApiResponse<any>>(this.apiUrl, form, { headers }).pipe(map(res => mapResponse(res, mapRequest)));
   }
 
   cancel(id: number): Observable<ApiResponse<LeaveRequest>> {
