@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -89,17 +89,15 @@ export class RequestService {
     form.append('reason', payload.reason);
     if (payload.document) form.append('documents[]', payload.document);
     // Algunos navegadores móviles pueden conservar visualmente valores al
-    // volver del selector de archivos y omitirlos en el multipart. La
-    // cabecera conserva los campos de control; Laravel los valida nuevamente.
-    const headers = new HttpHeaders({
-      'X-Request-Metadata': this.encodeRequestMetadata({
+    // volver del selector de archivos y omitirlos en el multipart. Esta parte
+    // estándar del formulario conserva los campos y no genera un nuevo CORS.
+    form.append('_request_metadata', this.encodeRequestMetadata({
         category_id: payload.category_id,
         start_date: payload.start_date,
         end_date: payload.end_date,
         reason: payload.reason,
-      }),
-    });
-    return this.http.post<ApiResponse<any>>(this.apiUrl, form, { headers }).pipe(map(res => mapResponse(res, mapRequest)));
+    }));
+    return this.http.post<ApiResponse<any>>(this.apiUrl, form).pipe(map(res => mapResponse(res, mapRequest)));
   }
 
   cancel(id: number): Observable<ApiResponse<LeaveRequest>> {

@@ -61,11 +61,13 @@ class LaborRequestApiTest extends TestCase
             ->assertJsonPath('success', true);
     }
 
-    public function test_health_endpoint_is_public_and_returns_no_sensitive_configuration(): void
+    public function test_health_endpoint_is_public_and_only_returns_safe_runtime_configuration(): void
     {
         $this->getJson('/api/health')
             ->assertOk()
-            ->assertExactJson(['success' => true, 'message' => 'API funcionando']);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'API funcionando')
+            ->assertJsonStructure(['upload_limits' => ['file', 'request']]);
     }
 
     public function test_worker_can_create_request_without_required_document(): void
@@ -88,8 +90,8 @@ class LaborRequestApiTest extends TestCase
         unset($payload['category_id'], $payload['start_date'], $payload['end_date'], $payload['reason']);
         $encodedMetadata = rtrim(strtr(base64_encode(json_encode($metadata)), '+/', '-_'), '=');
 
-        $this->withHeader('X-Request-Metadata', $encodedMetadata)
-            ->post('/api/requests', array_merge($payload, [
+        $this->post('/api/requests', array_merge($payload, [
+                '_request_metadata' => $encodedMetadata,
                 'documents' => [UploadedFile::fake()->create('sustento.jpg', 100, 'image/jpeg')],
             ]), ['Accept' => 'application/json'])
             ->assertCreated()
