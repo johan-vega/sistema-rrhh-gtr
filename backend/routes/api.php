@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\WorkerPhotoController;
 use App\Http\Controllers\RequestAvailabilityController;
+use App\Http\Controllers\RequestDeletionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HrController;
@@ -56,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('categories/{category}', [HrController::class, 'updateCategory']);
         Route::patch('categories/{category}/status', [HrController::class, 'categoryStatus']);
         Route::get('requests', [HrController::class, 'requests']);
+        Route::delete('requests/{request}', RequestDeletionController::class);
         Route::get('requests/{request}', [HrController::class, 'showRequest']);
         Route::get('requests/{request}/availability', [RequestAvailabilityController::class, 'forHrRequest']);
         Route::get('requests/{request}/documents/{document}', [LaborRequestController::class, 'download']);

@@ -27,6 +27,8 @@ export class HrRequestDetailComponent implements OnInit, OnDestroy {
   request = signal<LeaveRequest | null>(null);
   showApprove = signal(false);
   showReject = signal(false);
+  showDelete = signal(false);
+  deleteError = signal('');
   observation = '';
   documentError = signal('');
   availability = signal<AreaAvailabilitySummary | null>(null);
@@ -145,6 +147,18 @@ export class HrRequestDetailComponent implements OnInit, OnDestroy {
   }
 
   confirmApprove(): void { this.showApprove.set(true); }
+
+  deleteRequest(): void {
+    const request = this.request();
+    if (!request || this.processing()) return;
+    this.showDelete.set(false);
+    this.processing.set(true);
+    this.deleteError.set('');
+    this.svc.deleteRequest(request.id).subscribe({
+      next: () => { this.processing.set(false); this.router.navigate(['/hr/requests']); },
+      error: err => { this.processing.set(false); this.deleteError.set(err.error?.message || 'No se pudo confirmar la eliminación de la solicitud. Actualiza la página antes de reintentar.'); },
+    });
+  }
   confirmReject(): void { this.showReject.set(true); }
   dismissDialogs(): void { this.showApprove.set(false); this.showReject.set(false); }
 

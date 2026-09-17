@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { ApiResponse, AreaAvailabilitySummary, LeaveRequest } from '../../../../core/models';
 import { HrRequestService } from '../../../../core/services/hr-services';
@@ -21,7 +21,7 @@ const summary: AreaAvailabilitySummary = {
 const response = <T>(data: T): ApiResponse<T> => ({ success: true, message: 'OK', data });
 
 describe('Detalle RRHH: disponibilidad informativa', () => {
-  const service = { getById: vi.fn(), getAvailability: vi.fn(), approve: vi.fn(), reject: vi.fn() };
+  const service = { getById: vi.fn(), getAvailability: vi.fn(), approve: vi.fn(), reject: vi.fn(), deleteRequest: vi.fn() };
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -107,5 +107,30 @@ describe('Detalle RRHH: disponibilidad informativa', () => {
     const day = { date: '2026-09-29', approved_count: 20, limit: null, available: true };
     expect(fixture.componentInstance.availabilityStatus(day)).toBe('Disponible');
     expect(fixture.componentInstance.dayDescription(day)).toContain('20 / sin límite');
+  });
+
+  it('eliminar requiere confirmación y vuelve a la lista solo después de éxito', () => {
+    const fixture = render();
+    const element: HTMLElement = fixture.nativeElement;
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    service.deleteRequest.mockReturnValue(of(response(null)));
+    Array.from(element.querySelectorAll('button')).find(button => button.textContent?.includes('Eliminar solicitud'))!.click();
+    fixture.detectChanges();
+    expect(service.deleteRequest).not.toHaveBeenCalled();
+    expect(element.querySelector('[role="dialog"]')?.textContent).toContain('Esta acción no se puede deshacer');
+    Array.from(element.querySelectorAll('[role="dialog"] button')).find(button => button.textContent?.includes('Eliminar definitivamente'))!.dispatchEvent(new MouseEvent('click'));
+    expect(service.deleteRequest).toHaveBeenCalledWith(7);
+    expect(navigate).toHaveBeenCalledWith(['/hr/requests']);
+  });
+
+  it('un fallo al eliminar mantiene el detalle visible y muestra el error', () => {
+    const fixture = render();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    service.deleteRequest.mockReturnValue(throwError(() => ({ error: { message: 'No se pudo eliminar.' } })));
+    fixture.componentInstance.deleteRequest();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No se pudo eliminar.');
+    expect(navigate).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.processing()).toBe(false);
   });
 });

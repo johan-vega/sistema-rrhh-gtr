@@ -30,6 +30,22 @@ class WorkerDetailsTest extends TestCase {
     private function photo(): UploadedFile {
         return UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='));
     }
+    public function test_hr_can_create_worker_with_six_digit_password_preserving_leading_zero(): void {
+        $data = [...$this->payload(), 'password' => '010190', 'password_confirmation' => '010190'];
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');
+        $worker = Worker::findOrFail($id);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('010190', $worker->user->password));
+        $this->assertFalse(\Illuminate\Support\Facades\Hash::check('10190', $worker->user->password));
+        $this->postJson('/api/login', ['email' => $data['email'], 'password' => '010190'])
+            ->assertOk()->assertJsonStructure(['data' => ['token']]);
+    }
+    public function test_worker_password_still_requires_six_characters_and_confirmation(): void {
+        foreach ([['12345', '12345'], ['010190', '010191'], ['', '']] as [$password, $confirmation]) {
+            $this->postJson('/api/hr/workers', [...$this->payload(), 'password' => $password, 'password_confirmation' => $confirmation])
+                ->assertUnprocessable()->assertJsonValidationErrors('password');
+        }
+        $this->assertDatabaseCount('workers', 0);
+    }
     public function test_hr_creates_and_updates_new_fields_and_private_photo(): void {
         $data = $this->payload();
         $id = $this->post('/api/hr/workers', [...$data, 'photo' => $this->photo()], ['Accept' => 'application/json'])
