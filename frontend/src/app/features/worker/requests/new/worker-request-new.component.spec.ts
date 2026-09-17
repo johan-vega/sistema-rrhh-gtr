@@ -3,19 +3,23 @@ import { provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { WorkerRequestNewComponent } from './worker-request-new.component';
 import { CategoryService } from '../../../../core/services/category.service';
+import { RequestAvailabilityService } from '../../../../core/services/request-availability.service';
 import { RequestService } from '../../../../core/services/request.service';
 
 describe('Nueva solicitud: selección y envío del documento', () => {
   let fixture: ComponentFixture<WorkerRequestNewComponent>;
   let component: WorkerRequestNewComponent;
   let create: ReturnType<typeof vi.fn>;
+  let availability: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     create = vi.fn(() => new Subject());
+    availability = vi.fn(() => of(null));
     await TestBed.configureTestingModule({
       imports: [WorkerRequestNewComponent],
       providers: [
         provideRouter([]),
+        { provide: RequestAvailabilityService, useValue: { firstBlockedDate: availability } },
         { provide: RequestService, useValue: { create } },
         { provide: CategoryService, useValue: { getAll: () => of({ success: true, data: [{
           id: 4, name: 'Justificación de falta', requires_document: true,
@@ -32,6 +36,56 @@ describe('Nueva solicitud: selección y envío del documento', () => {
     select.dispatchEvent(new Event('change'));
     component.form.patchValue({ start_date: '2026-09-14', end_date: '2026-09-14', reason: 'Justificación médica' });
     fixture.detectChanges();
+  });
+
+  function normalCategory(): void {
+    const category = { ...component.categories()[0], is_absence: false, requires_document: false };
+    component.categories.set([category]);
+    component.selectedCategory.set(category);
+    fixture.detectChanges();
+  }
+
+  it('rechaza visualmente una fecha bloqueada sin llamar al envío multipart', () => {
+    availability.mockReturnValue(of('2026-09-14'));
+    normalCategory();
+    expect(component.startCtrl.hasError('areaAvailability')).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('área alcanzó el límite');
+    component.onSubmit();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('comprueba el intervalo completo y bloquea envío mientras espera la API', () => {
+    const pending = new Subject<string | null>();
+    availability.mockReturnValue(pending);
+    normalCategory();
+    component.endCtrl.setValue('2026-09-20');
+    fixture.detectChanges();
+    expect(availability).toHaveBeenCalledWith('2026-09-14', '2026-09-20');
+    expect(component.form.pending).toBe(true);
+    component.onSubmit();
+    expect(create).not.toHaveBeenCalled();
+    pending.next('2026-09-17'); pending.complete();
+    fixture.detectChanges();
+    expect(component.endCtrl.hasError('areaAvailability')).toBe(true);
+  });
+
+  it('justificación no consulta cupo ni conserva bloqueos de otra categoría', () => {
+    availability.mockReturnValue(of('2026-09-14'));
+    normalCategory();
+    availability.mockClear();
+    component.selectedCategory.set({ ...component.categories()[0], is_absence: true });
+    fixture.detectChanges();
+    expect(availability).not.toHaveBeenCalled();
+    expect(component.startCtrl.hasError('areaAvailability')).toBe(false);
+    expect(component.endCtrl.hasError('areaAvailability')).toBe(false);
+  });
+
+  it('rechaza provisionalmente una fecha si no se puede consultar disponibilidad', () => {
+    availability.mockReturnValue(throwError(() => new Error('offline')));
+    normalCategory();
+    expect(component.startCtrl.getError('areaAvailability')).toContain('No se pudo comprobar');
+    component.onSubmit();
+    expect(create).not.toHaveBeenCalled();
   });
 
   function attach(file = new File(['foto'], 'foto.jpg', { type: 'image/jpeg' })): HTMLInputElement {

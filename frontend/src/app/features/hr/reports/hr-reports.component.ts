@@ -30,6 +30,7 @@ export class HrReportsComponent implements OnInit {
   loading = signal(true);
   exporting = signal(false);
   error = signal('');
+  private appliedFilters: HrReportFilters = {};
 
   filterForm = this.fb.group({
     from: [''],
@@ -54,9 +55,11 @@ export class HrReportsComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.reports.getRequestReport(this.filters()).subscribe({
+    const filters = this.filters();
+    this.reports.getRequestReport(filters).subscribe({
       next: response => {
         this.report.set(response.data);
+        this.appliedFilters = filters;
         this.loading.set(false);
       },
       error: () => {
@@ -77,9 +80,10 @@ export class HrReportsComponent implements OnInit {
   }
 
   exportExcel(): void {
+    if (this.loading() || this.exporting() || !this.report()) return;
     this.exporting.set(true);
     this.error.set('');
-    this.reports.exportRequestReport(this.filters()).subscribe({
+    this.reports.exportRequestReport(this.appliedFilters).subscribe({
       next: file => {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(file);

@@ -17,6 +17,7 @@ use Illuminate\Validation\ValidationException;
 
 class LaborRequestService
 {
+    public function __construct(private readonly AreaAvailabilityService $availability) {}
     public function create(Worker $worker, array $data, array $files, User $actor): LaborRequest
     {
         $category = RequestCategory::query()->whereKey($data['category_id'])->where('active', true)->first();
@@ -24,7 +25,7 @@ class LaborRequestService
             throw ValidationException::withMessages(['category_id' => ['La categoría no existe o está inactiva.']]);
         }
         $start = Carbon::parse($data['start_date'])->startOfDay();
-        if ($category->is_absence && $start->lt(today())) {
+        if ($category->is_absence) {
             $maximumPastDays = $category->maximum_past_days ?? 0;
             if ($start->lt(today()->subDays($maximumPastDays))) {
                 throw ValidationException::withMessages(['start_date' => ["La justificación puede registrarse hasta {$maximumPastDays} día(s) después de la falta."]]);
@@ -36,6 +37,9 @@ class LaborRequestService
             throw ValidationException::withMessages(['documents' => ['Esta categoría requiere al menos un documento.']]);
         }
         return DB::transaction(function () use ($worker, $data, $files, $actor, $category) {
+            if (! $category->is_absence) {
+                $this->availability->assertAvailable($worker, $data['start_date'], $data['end_date']);
+            }
             $request = LaborRequest::create(['worker_id' => $worker->id, 'category_id' => $category->id, 'start_date' => $data['start_date'], 'end_date' => $data['end_date'], 'reason' => $data['reason'], 'status' => RequestStatus::PENDING, 'requested_at' => now()]);
             foreach ($files as $file) {
                 $this->storeDocument($request, $file);
@@ -68,7 +72,16 @@ class LaborRequestService
         if ($request->status !== RequestStatus::PENDING) {
             throw ValidationException::withMessages(['status' => ['Solo se pueden responder solicitudes pendientes.']]);
         }
-        DB::transaction(function () use ($request, $actor, $approved, $observation) {
+        $isAbsence = $request->category->is_absence;
+        DB::transaction(function () use ($request, $actor, $approved, $observation, $isAbsence) {
+            // El área se bloquea antes de leer ocupación y antes de aprobar.
+            if ($approved && ! $isAbsence) {
+                $this->availability->assertAvailable($request->worker, $request->start_date->toDateString(), $request->end_date->toDateString());
+            }
+            $request = LaborRequest::whereKey($request->id)->lockForUpdate()->firstOrFail();
+            if ($request->status !== RequestStatus::PENDING) {
+                throw ValidationException::withMessages(['status' => ['Solo se pueden responder solicitudes pendientes.']]);
+            }
             $status = $approved ? RequestStatus::APPROVED : RequestStatus::REJECTED;
             $request->update(['status' => $status, 'responded_at' => now(), 'hr_observation' => $observation]);
             $action = $approved ? 'APROBADA' : 'RECHAZADA';

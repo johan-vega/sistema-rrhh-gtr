@@ -2,6 +2,15 @@
 // USER & AUTH MODELS
 // =====================================================
 
+export type WorkerType = 'OBRERO' | 'EMPLEADO';
+export interface WorkerPersonalDetails {
+  dni_address?: string | null;
+  emergency_phone?: string | null;
+  worker_type?: WorkerType | null;
+  birth_date?: string | null;
+  has_photo?: boolean;
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -16,7 +25,7 @@ export interface AuthResponse {
   };
 }
 
-export interface User {
+export interface User extends WorkerPersonalDetails {
   id: number;
   name: string;
   last_name: string;
@@ -46,6 +55,7 @@ export interface Area {
   id: number;
   name: string;
   description?: string;
+  max_simultaneous_permissions?: number | null;
   monthly_permission_limit?: number | null;
   monthly_absence_limit?: number | null;
   active: boolean;
@@ -119,7 +129,7 @@ export interface RejectRequestPayload {
 // WORKER (RRHH view of employee)
 // =====================================================
 
-export interface Worker {
+export interface Worker extends WorkerPersonalDetails {
   id: number;
   name: string;
   last_name: string;
@@ -136,7 +146,8 @@ export interface Worker {
   created_at?: string;
 }
 
-export interface CreateWorkerPayload {
+export interface CreateWorkerPayload extends WorkerPersonalDetails {
+  photo?: File;
   name: string;
   last_name: string;
   dni: string;
@@ -150,7 +161,8 @@ export interface CreateWorkerPayload {
   password: string;
 }
 
-export interface UpdateWorkerPayload {
+export interface UpdateWorkerPayload extends WorkerPersonalDetails {
+  photo?: File;
   name?: string;
   last_name?: string;
   dni?: string;

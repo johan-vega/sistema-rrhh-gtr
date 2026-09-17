@@ -9,6 +9,6 @@ class AreaResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return ['id' => $this->id, 'name' => $this->name, 'description' => $this->description, 'monthly_permission_limit' => $this->monthly_permission_limit, 'monthly_absence_limit' => $this->monthly_absence_limit, 'active' => $this->active];
+        return ['id' => $this->id, 'name' => $this->name, 'description' => $this->description, 'monthly_permission_limit' => $this->monthly_permission_limit, 'monthly_absence_limit' => $this->monthly_absence_limit, 'max_simultaneous_permissions' => $this->max_simultaneous_permissions, 'active' => $this->active];
     }
 }

@@ -15,8 +15,12 @@ import { Area } from '../../../core/models/index';
         <p>Administra las áreas y sus topes mensuales de permisos y faltas.</p>
       </div>
 
+      @if (error()) { <div class="alert alert-error" role="alert">{{ error() }}</div> }
       <div class="add-card">
         <h3>{{ editingArea ? 'Editar Área' : 'Agregar Nueva Área' }}</h3>
+        <label for="simultaneous-limit">Tope de permisos simultáneos</label>
+        <p class="limit-help">Número máximo de trabajadores del área que pueden tener un permiso aprobado en la misma fecha. Vacío = sin límite.</p>
+        <input id="simultaneous-limit" type="number" [(ngModel)]="simultaneousLimit" min="1" step="1" placeholder="Sin límite" class="input-control" />
         <div class="input-row">
           <input 
             type="text" 
@@ -40,7 +44,7 @@ import { Area } from '../../../core/models/index';
               <th>ID</th>
               <th>Nombre del Área</th>
               <th>Estado</th>
-              <th>Topes mensuales</th>
+              <th>Topes</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -53,7 +57,7 @@ import { Area } from '../../../core/models/index';
                   {{ area.active ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
-              <td>Permisos: {{ limitLabel(area.monthly_permission_limit) }}<br>Faltas: {{ limitLabel(area.monthly_absence_limit) }}</td>
+              <td>Simultáneos: {{ limitLabel(area.max_simultaneous_permissions) }}<br>Permisos/mes: {{ limitLabel(area.monthly_permission_limit) }}<br>Faltas/mes: {{ limitLabel(area.monthly_absence_limit) }}</td>
               <td class="actions-cell">
                 <button (click)="startEdit(area)" class="btn-action edit">Editar</button>
                 <button (click)="toggleStatus(area)" class="btn-action toggle">
@@ -86,6 +90,8 @@ import { Area } from '../../../core/models/index';
       box-shadow: 0 4px 16px rgba(0,0,0,0.03);
       h3 { font-size: 1rem; font-weight: 800; color: #1e293b; margin: 0 0 0.8rem 0; }
     }
+    .limit-help { font-size:.85rem; color:var(--color-text-muted); margin:.5rem 0; }
+    #simultaneous-limit { margin-bottom:1rem; max-width:100%; }
     .input-row {
       display: flex;
       gap: 0.75rem;
@@ -193,6 +199,8 @@ export class HrAreasComponent implements OnInit {
 
   areas = signal<Area[]>([]);
   areaName = '';
+  error = signal('');
+  simultaneousLimit: number | null = null;
   permissionLimit: number | null = null;
   absenceLimit: number | null = null;
   editingArea: Area | null = null;
@@ -209,10 +217,15 @@ export class HrAreasComponent implements OnInit {
 
   saveArea(): void {
     if (!this.areaName.trim()) return;
+    this.error.set('');
+    if (this.simultaneousLimit !== null && (!Number.isInteger(this.simultaneousLimit) || this.simultaneousLimit < 1)) {
+      this.error.set('El tope simultáneo debe ser un entero mayor o igual a 1, o quedar vacío.');
+      return;
+    }
     if (this.editingArea) {
       this.areaService.update(this.editingArea.id, this.areaPayload()).subscribe(res => {
         if (res.success) {
-          Object.assign(this.editingArea!, res.data);
+          this.areas.update(list => list.map(area => area.id === res.data.id ? res.data : area));
           this.cancelEdit();
         }
       });
@@ -220,7 +233,7 @@ export class HrAreasComponent implements OnInit {
       this.areaService.create(this.areaPayload()).subscribe(res => {
         if (res.success && res.data) {
           this.areas.update(list => [...list, res.data]);
-          this.areaName = '';
+          this.cancelEdit();
         }
       });
     }
@@ -231,6 +244,7 @@ export class HrAreasComponent implements OnInit {
     this.areaName = area.name;
     this.permissionLimit = area.monthly_permission_limit ?? null;
     this.absenceLimit = area.monthly_absence_limit ?? null;
+    this.simultaneousLimit = area.max_simultaneous_permissions ?? null;
   }
 
   cancelEdit(): void {
@@ -238,12 +252,13 @@ export class HrAreasComponent implements OnInit {
     this.areaName = '';
     this.permissionLimit = null;
     this.absenceLimit = null;
+    this.simultaneousLimit = null;
   }
 
   toggleStatus(area: Area): void {
     this.areaService.toggleStatus(area.id, !area.active).subscribe(res => {
       if (res.success) {
-        area.active = !area.active;
+        this.areas.update(list => list.map(item => item.id === area.id ? { ...item, ...res.data } : item));
       }
     });
   }
@@ -253,6 +268,7 @@ export class HrAreasComponent implements OnInit {
   private areaPayload(): Pick<Area, 'name'> & Partial<Area> {
     return {
       name: this.areaName.trim(),
+      max_simultaneous_permissions: this.simultaneousLimit,
       monthly_permission_limit: this.permissionLimit || null,
       monthly_absence_limit: this.absenceLimit || null,
     };

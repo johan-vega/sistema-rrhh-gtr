@@ -2,12 +2,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ProfileService } from '../../../core/services/profile.service';
+import { WorkerPhotoComponent } from '../../../shared/components/worker-photo.component';
 import { User } from '../../../core/models/index';
 import { LoadingSpinnerComponent } from '../../../shared/components/ui.components';
 
 @Component({
   selector: 'app-worker-profile',
-  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent],
+  imports: [CommonModule, ReactiveFormsModule, LoadingSpinnerComponent, WorkerPhotoComponent],
   template: `
     <div class="page-container">
       <h1 class="page-title">Mi Perfil</h1>
@@ -27,7 +28,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
           <div class="card-header"><h2>Información personal</h2></div>
           <div class="card-body">
             <div class="avatar-row">
-              <div class="profile-avatar">{{ user()!.name.charAt(0) }}</div>
+              <div class="profile-avatar"><app-worker-photo [workerId]="user()!.id" [hasPhoto]="!!user()!.has_photo" [initials]="user()!.name.charAt(0)" /></div>
               <div>
                 <p class="profile-name">{{ user()!.full_name }}</p>
                 <p class="profile-role">Trabajador</p>
@@ -55,6 +56,11 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
                 <span class="detail-label">Cargo</span>
                 <span class="detail-value">{{ user()!.position?.name ?? '—' }}</span>
               </div>
+              <div class="detail-row"><span class="detail-label">Fecha de nacimiento</span><span class="detail-value">{{ (user()!.birth_date | date:'dd/MM/yyyy') || '—' }}</span></div>
+              <div class="detail-row"><span class="detail-label">Tipo de trabajador</span><span class="detail-value">{{ user()!.worker_type || '—' }}</span></div>
+              <div class="detail-row"><span class="detail-label">Dirección según DNI</span><span class="detail-value">{{ user()!.dni_address || '—' }}</span></div>
+              <div class="detail-row"><span class="detail-label">Teléfono de emergencia</span><span class="detail-value">{{ user()!.emergency_phone || '—' }}</span></div>
+              <div class="detail-row"><span class="detail-label">Correo</span><span class="detail-value">{{ user()!.email }}</span></div>
             </div>
             <div class="readonly-notice">
               Estos datos solo pueden ser modificados por RRHH.
@@ -68,7 +74,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
           <div class="card-body">
             <form [formGroup]="form" (ngSubmit)="onSave()">
               <div class="form-group">
-                <label class="form-label" for="address">Dirección</label>
+                <label class="form-label" for="address">Dirección de residencia</label>
                 <input id="address" type="text" class="form-control" formControlName="address"
                   placeholder="Tu dirección de residencia" />
               </div>
@@ -88,6 +94,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
     </div>
   `,
   styles: [`
+    .detail-value { overflow-wrap: anywhere; min-width: 0; }
     .avatar-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
     .profile-avatar {
       width: 56px; height: 56px; border-radius: 50%;

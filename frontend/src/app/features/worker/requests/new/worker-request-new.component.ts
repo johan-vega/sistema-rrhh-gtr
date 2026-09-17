@@ -4,11 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CategoryService } from '../../../../core/services/category.service';
 import { RequestService } from '../../../../core/services/request.service';
+import { AreaAvailabilityDirective } from '../../../../shared/directives/area-availability.directive';
 import { RequestCategory } from '../../../../core/models/index';
 
 @Component({
   selector: 'app-worker-request-new',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AreaAvailabilityDirective],
   templateUrl: './worker-request-new.component.html',
   styleUrl: './worker-request-new.component.scss',
 })
@@ -25,7 +26,7 @@ export class WorkerRequestNewComponent implements OnInit {
   error            = signal('');
   selectedFile     = signal<File | null>(null);
   dateWarning      = signal('');
-  today            = new Date().toISOString().split('T')[0];
+  today            = this.localDate(new Date());
 
   form = this.fb.group({
     category_id: this.fb.control<number | null>(null, Validators.required),
@@ -62,7 +63,7 @@ export class WorkerRequestNewComponent implements OnInit {
           ? `La justificación puede registrarse hasta ${maximumPastDays} día(s) después de la falta.`
           : `Puedes justificar una falta ocurrida hasta hace ${maximumPastDays} día(s).`,
       );
-    } else if (diffDays < cat.minimum_advance_days) {
+    } else if (!cat.is_absence && diffDays < cat.minimum_advance_days) {
       this.dateWarning.set(
         `Esta categoría requiere al menos ${cat.minimum_advance_days} día(s) de anticipación.`
       );
@@ -112,7 +113,7 @@ export class WorkerRequestNewComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.loading()) return;
+    if (this.loading() || this.form.pending) return;
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -162,7 +163,11 @@ export class WorkerRequestNewComponent implements OnInit {
     if (!category?.is_absence) return this.today;
     const date = new Date();
     date.setDate(date.getDate() - (category.maximum_past_days ?? 0));
-    return date.toISOString().split('T')[0];
+    return this.localDate(date);
+  }
+
+  private localDate(date: Date): string {
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
   }
 
   private getRequestError(error: any): string {

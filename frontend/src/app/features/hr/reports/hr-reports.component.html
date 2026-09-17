@@ -60,10 +60,11 @@
         <button type="button" class="btn btn-secondary" (click)="useAllHistory()">Todo el historial</button>
         <button type="button" class="btn btn-secondary" (click)="useCurrentMonth()">Mes actual</button>
         <button type="submit" class="btn btn-primary" [disabled]="loading()">Aplicar filtros</button>
-        <button type="button" class="btn btn-excel" (click)="exportExcel()" [disabled]="exporting()">
+        <button type="button" class="btn btn-excel" (click)="exportExcel()" [disabled]="exporting() || loading() || !report()">
           {{ exporting() ? 'Preparando archivo…' : 'Exportar Excel' }}
         </button>
       </div>
+      <p class="form-hint">El Excel usa los filtros aplicados al detalle. Aplica los cambios antes de exportar.</p>
     </form>
   </section>
 

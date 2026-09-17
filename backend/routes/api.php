@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\WorkerPhotoController;
+use App\Http\Controllers\RequestAvailabilityController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HrController;
@@ -12,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('health', HealthController::class);
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('workers/{worker}/photo', [WorkerPhotoController::class, 'show']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
     Route::get('categories', [LaborRequestController::class, 'categories']);
@@ -24,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('profile', [ProfileController::class, 'update']);
         Route::get('requests', [LaborRequestController::class, 'index']);
         Route::post('requests', [LaborRequestController::class, 'store']);
+        Route::get('requests/availability', RequestAvailabilityController::class);
         Route::get('requests/{request}', [LaborRequestController::class, 'show']);
         Route::post('requests/{request}/cancel', [LaborRequestController::class, 'cancel']);
         Route::get('requests/{request}/documents/{document}', [LaborRequestController::class, 'download']);

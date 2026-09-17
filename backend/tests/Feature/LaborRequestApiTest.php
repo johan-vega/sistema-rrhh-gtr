@@ -393,6 +393,12 @@ class LaborRequestApiTest extends TestCase
         $this->assertStringContainsString('Periodo', $sheet);
         $this->assertStringContainsString('Solicitada', $sheet);
         $this->assertStringContainsString('width="34"', $sheet);
+        foreach (['Área', 'Periodo inicio', 'Periodo fin', '10/09/2026', '12/09/2026', 'TI', 'Motivo', 'Estado'] as $value) {
+            $this->assertStringContainsString($value, $sheet);
+        }
+        $this->assertStringContainsString('autoFilter ref="A1:H2"', $sheet);
+        $this->assertStringNotContainsString('10/10/2026', $sheet);
+        $this->assertStringNotContainsString('01/09/2026', $sheet);
     }
 
     public function test_monthly_worker_and_area_limits_do_not_block_new_permission_requests(): void

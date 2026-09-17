@@ -30,12 +30,15 @@ class RequestReportExportService
             ['Canceladas', $this->countByStatus($requests, 'CANCELADA')],
         ];
 
-        $details = [['Trabajador', 'Motivo', 'Periodo', 'Estado', 'Solicitada']];
+        $details = [['Trabajador', 'Área', 'Motivo', 'Periodo', 'Periodo inicio', 'Periodo fin', 'Estado', 'Solicitada']];
         foreach ($requests as $request) {
             $details[] = [
                 trim("{$request->worker->first_name} {$request->worker->last_name}"),
+                $request->worker->area?->name ?? '',
                 $request->category->name,
                 $request->start_date?->format('Y-m-d').' al '.$request->end_date?->format('Y-m-d'),
+                $request->start_date?->format('d/m/Y') ?? '',
+                $request->end_date?->format('d/m/Y') ?? '',
                 $request->status->value,
                 $request->requested_at?->format('Y-m-d') ?? '',
             ];
@@ -47,7 +50,7 @@ class RequestReportExportService
         $zip->addFromString('xl/_rels/workbook.xml.rels', $this->workbookRelationships());
         $zip->addFromString('xl/styles.xml', $this->styles());
         // El detalle es la primera hoja para que Excel abra el mismo formato que ve RRHH en la web.
-        $zip->addFromString('xl/worksheets/sheet1.xml', $this->worksheet($details, [1], 'A1:E'.max(count($details), 1), [34, 28, 30, 18, 18], false));
+        $zip->addFromString('xl/worksheets/sheet1.xml', $this->worksheet($details, [1], 'A1:H'.max(count($details), 1), [34, 26, 28, 30, 18, 18, 18, 18], false));
         $zip->addFromString('xl/worksheets/sheet2.xml', $this->worksheet($summary, [6], null, [30, 22]));
         $zip->close();
 

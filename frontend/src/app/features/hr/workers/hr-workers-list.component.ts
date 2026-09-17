@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HrWorkerService } from '../../../core/services/hr-worker.service';
+import { WorkerPhotoComponent } from '../../../shared/components/worker-photo.component';
 import { Worker } from '../../../core/models/index';
 
 @Component({
   selector: 'app-hr-workers-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, WorkerPhotoComponent],
   template: `
     <div class="workers-container">
       <div class="header-bar">
@@ -31,7 +32,7 @@ import { Worker } from '../../../core/models/index';
       <div class="workers-grid">
         <div *ngFor="let worker of filteredWorkers()" class="worker-card">
           <div class="card-header">
-            <div class="avatar">{{ getInitials(worker.name, worker.last_name) }}</div>
+            <div class="avatar"><app-worker-photo [workerId]="worker.id" [hasPhoto]="!!worker.has_photo" [initials]="getInitials(worker.name, worker.last_name)" /></div>
             <div class="worker-info">
               <h3>{{ worker.full_name }}</h3>
               <span class="dni-text">DNI: {{ worker.dni }}</span>
