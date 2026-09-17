@@ -12,9 +12,8 @@ class AreaAvailabilityService
      * Las justificaciones no reservan cupo. null = sin límite; pendientes tampoco reservan.
      * Se excluye al solicitante: otro permiso suyo no agrega una persona al cupo.
      */
-    private function fullPeriods(Area $area, string $from, string $to, int $workerId): array
+    private function occupancyEvents(Area $area, string $from, string $to, int $workerId): array
     {
-        if ($area->max_simultaneous_permissions === null) return [];
         $requests = LaborRequest::query()->select(['worker_id', 'start_date', 'end_date'])
             ->where('status', RequestStatus::APPROVED)->where('worker_id', '!=', $workerId)
             ->whereHas('worker', fn ($q) => $q->where('area_id', $area->id))
@@ -41,6 +40,13 @@ class AreaAvailabilityService
             }
         }
         ksort($events);
+        return $events;
+    }
+
+    private function fullPeriods(Area $area, string $from, string $to, int $workerId): array
+    {
+        if ($area->max_simultaneous_permissions === null) return [];
+        $events = $this->occupancyEvents($area, $from, $to, $workerId);
         $periods = [];
         $count = 0;
         $previous = null;
@@ -52,6 +58,25 @@ class AreaAvailabilityService
             $previous = $date;
         }
         return $periods;
+    }
+
+    /** Resumen informativo de RRHH; comparte el conteo usado al validar/aprobar. */
+    public function summary(Worker $worker, string $from, string $to, bool $isAbsence): array
+    {
+        $area = $worker->area;
+        $limit = $area->max_simultaneous_permissions;
+        $events = $this->occupancyEvents($area, $from, $to, $worker->id);
+        $dates = [];
+        $blocked = [];
+        $count = 0;
+        for ($day = CarbonImmutable::parse($from); $day->toDateString() <= $to; $day = $day->addDay()) {
+            $date = $day->toDateString();
+            $count += $events[$date] ?? 0;
+            $available = $isAbsence || $limit === null || $count < $limit;
+            $dates[] = ['date' => $date, 'approved_count' => $count, 'limit' => $limit, 'available' => $available];
+            if (! $available) $blocked[] = $date;
+        }
+        return ['blocked_dates' => $blocked, 'dates' => $dates, 'is_exempt' => $isAbsence];
     }
 
     public function blockedDates(Worker $worker, string $from, string $to): array

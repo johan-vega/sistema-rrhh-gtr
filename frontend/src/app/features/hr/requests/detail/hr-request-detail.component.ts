@@ -1,10 +1,11 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HrRequestService } from '../../../../core/services/hr-services';
 import { DocumentService } from '../../../../core/services/document.service';
-import { LeaveRequest } from '../../../../core/models/index';
+import { AreaAvailabilityDate, AreaAvailabilitySummary, LeaveRequest } from '../../../../core/models/index';
+import { Subscription } from 'rxjs';
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/ui.components';
@@ -15,7 +16,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/ui.compon
   templateUrl: './hr-request-detail.component.html',
   styleUrl: './hr-request-detail.component.scss',
 })
-export class HrRequestDetailComponent implements OnInit {
+export class HrRequestDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private svc = inject(HrRequestService);
@@ -28,6 +29,50 @@ export class HrRequestDetailComponent implements OnInit {
   showReject = signal(false);
   observation = '';
   documentError = signal('');
+  availability = signal<AreaAvailabilitySummary | null>(null);
+  availabilityLoading = signal(false);
+  availabilityError = signal('');
+  availabilityMonth = signal('');
+  selectedDate = signal('');
+  readonly weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  private availabilitySubscription?: Subscription;
+
+  readonly visibleRange = computed(() => {
+    const request = this.request();
+    const month = this.availabilityMonth();
+    if (!request || !month) return null;
+    const [year, number] = month.split('-').map(Number);
+    const lastDay = new Date(year, number, 0).getDate();
+    return {
+      from: request.start_date > `${month}-01` ? request.start_date : `${month}-01`,
+      to: request.end_date < `${month}-${lastDay}` ? request.end_date : `${month}-${lastDay}`,
+    };
+  });
+  readonly monthLabel = computed(() => this.availabilityMonth()
+    ? new Date(`${this.availabilityMonth()}-01T00:00:00`).toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })
+    : '');
+  readonly calendarDays = computed(() => {
+    const month = this.availabilityMonth();
+    if (!month) return [];
+    const [year, number] = month.split('-').map(Number);
+    const offset = new Date(year, number - 1, 1).getDay();
+    const count = new Date(year, number, 0).getDate();
+    const dates = new Map(this.availability()?.dates.map(day => [day.date, day]) ?? []);
+    return Array.from({ length: offset + count }, (_, index) => {
+      if (index < offset) return null;
+      const day = index - offset + 1;
+      const date = `${month}-${String(day).padStart(2, '0')}`;
+      return { date, day, availability: dates.get(date) };
+    });
+  });
+  readonly selectedAvailability = computed(() => this.availability()?.dates.find(day => day.date === this.selectedDate()));
+  readonly availabilityMessage = computed(() => {
+    const summary = this.availability();
+    if (!summary || summary.is_exempt) return '';
+    if (summary.dates.some(day => !day.available)) return 'Una o más fechas del periodo ya alcanzaron el límite configurado para el área.';
+    if (summary.dates.some(day => this.isNearLimit(day))) return 'El área se encuentra cerca del límite en algunas fechas.';
+    return 'No se detectan conflictos de cupo para este periodo.';
+  });
 
   get isActionable() {
     return this.request()?.status === 'PENDING';
@@ -36,9 +81,63 @@ export class HrRequestDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.svc.getById(id).subscribe({
-      next: res => { this.request.set(res.data); this.loading.set(false); },
+      next: res => {
+        this.request.set(res.data);
+        this.loading.set(false);
+        if (this.isActionable) {
+          this.availabilityMonth.set(res.data.start_date.slice(0, 7));
+          this.loadAvailability();
+        }
+      },
       error: () => this.loading.set(false),
     });
+  }
+
+  ngOnDestroy(): void { this.availabilitySubscription?.unsubscribe(); }
+
+  loadAvailability(): void {
+    const request = this.request();
+    const range = this.visibleRange();
+    if (!request || !range) return;
+    // Al cambiar de mes no mostramos resultados anteriores como si fueran actuales.
+    this.availabilitySubscription?.unsubscribe();
+    this.availability.set(null);
+    this.availabilityError.set('');
+    this.availabilityLoading.set(true);
+    this.selectedDate.set(range.from);
+    this.availabilitySubscription = this.svc.getAvailability(request.id, range.from, range.to).subscribe({
+      next: res => { this.availability.set(res.data); this.availabilityLoading.set(false); },
+      error: () => {
+        this.availabilityLoading.set(false);
+        this.availabilityError.set('No se pudo consultar la disponibilidad. Inténtalo nuevamente.');
+      },
+    });
+  }
+
+  changeAvailabilityMonth(delta: number): void {
+    const request = this.request();
+    if (!request) return;
+    const [year, number] = this.availabilityMonth().split('-').map(Number);
+    const date = new Date(year, number - 1 + delta, 1);
+    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    if (month < request.start_date.slice(0, 7) || month > request.end_date.slice(0, 7)) return;
+    this.availabilityMonth.set(month);
+    this.loadAvailability();
+  }
+
+  isNearLimit(day: AreaAvailabilityDate): boolean {
+    // Amarillo significa que queda un cupo; un área vacía permanece verde.
+    return day.available && day.limit !== null && day.approved_count > 0 && day.approved_count === day.limit - 1;
+  }
+
+  availabilityStatus(day: AreaAvailabilityDate): string {
+    if (this.availability()?.is_exempt) return 'Informativo · solicitud exenta';
+    if (!day.available) return 'Tope alcanzado';
+    return this.isNearLimit(day) ? 'Cerca del límite' : 'Disponible';
+  }
+
+  dayDescription(day: AreaAvailabilityDate): string {
+    return `${this.formatDate(day.date)}: ${day.approved_count} / ${day.limit ?? 'sin límite'} permisos aprobados. ${this.availabilityStatus(day)}.`;
   }
 
   formatDate(d: string): string {

@@ -235,6 +235,19 @@ export interface HrDashboardStats {
   recent_requests: LeaveRequest[];
 }
 
+export interface AreaAvailabilityDate {
+  date: string;
+  approved_count: number;
+  limit: number | null;
+  available: boolean;
+}
+
+export interface AreaAvailabilitySummary {
+  blocked_dates: string[];
+  dates: AreaAvailabilityDate[];
+  is_exempt: boolean;
+}
+
 // =====================================================
 // FILTERS
 // =====================================================

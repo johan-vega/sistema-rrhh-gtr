@@ -71,6 +71,71 @@
       </div>
     </div>
 
+    @if (isActionable) {
+      <section class="info-section availability-section" aria-labelledby="availability-heading" [attr.aria-busy]="availabilityLoading()">
+        <h3 id="availability-heading">Disponibilidad del área</h3>
+        <p>Otros trabajadores con permisos aprobados / tope diario. Cada trabajador cuenta una sola vez.</p>
+        <div class="availability-nav">
+          <button type="button" aria-label="Mes anterior" (click)="changeAvailabilityMonth(-1)"
+            [disabled]="availabilityMonth() <= request()!.start_date.slice(0, 7)">‹</button>
+          <strong aria-live="polite">{{ monthLabel() }}</strong>
+          <button type="button" aria-label="Mes siguiente" (click)="changeAvailabilityMonth(1)"
+            [disabled]="availabilityMonth() >= request()!.end_date.slice(0, 7)">›</button>
+        </div>
+        @if (visibleRange(); as range) {
+          <p class="availability-period">Periodo visible: {{ formatDate(range.from) }} — {{ formatDate(range.to) }}</p>
+        }
+        @if (availabilityLoading()) {
+          <p role="status">Consultando disponibilidad…</p>
+        } @else if (availabilityError()) {
+          <p role="alert" class="doc-error">{{ availabilityError() }}</p>
+          <button type="button" class="doc-link" (click)="loadAvailability()">Reintentar</button>
+        } @else if (availability(); as summary) {
+          @if (summary.is_exempt) {
+            <p class="availability-note">Las justificaciones de falta no están sujetas al límite de permisos del área.</p>
+          }
+          <div class="availability-grid">
+            @for (weekday of weekdays; track weekday) {
+              <span class="availability-weekday" aria-hidden="true">{{ weekday }}</span>
+            }
+            @for (day of calendarDays(); track $index) {
+              @if (day) {
+                @if (day.availability; as detail) {
+                <button type="button" class="availability-day requested"
+                  [class.available]="!summary.is_exempt && detail.available && !isNearLimit(detail)"
+                  [class.near]="!summary.is_exempt && isNearLimit(detail)"
+                  [class.full]="!summary.is_exempt && !detail.available"
+                  [class.selected]="selectedDate() === day.date"
+                  [attr.aria-pressed]="selectedDate() === day.date"
+                  [attr.aria-label]="dayDescription(detail)" [title]="dayDescription(detail)"
+                  (click)="selectedDate.set(day.date)">
+                  <strong>{{ day.day }}</strong>
+                  <small>{{ detail.approved_count }}/{{ detail.limit ?? '—' }}</small>
+                </button>
+                } @else {
+                  <span class="availability-day outside" aria-hidden="true">{{ day.day }}</span>
+                }
+              } @else {
+                <span aria-hidden="true"></span>
+              }
+            }
+          </div>
+          <p class="availability-help">Fechas de la solicitud enmarcadas. Selecciona un día para ver el detalle. — = sin límite.</p>
+          @if (!summary.is_exempt) {
+            <div class="availability-legend" aria-label="Leyenda de disponibilidad">
+              <span class="available">Disponible</span><span class="near">Cerca del límite (queda 1 cupo)</span><span class="full">Tope alcanzado</span>
+            </div>
+          }
+          @if (selectedAvailability(); as day) {
+            <p class="availability-note" aria-live="polite">{{ dayDescription(day) }}</p>
+          }
+          @if (availabilityMessage()) { <p role="status">{{ availabilityMessage() }}</p> }
+          <p class="availability-help">Resumen informativo del periodo visible; no modifica el estado de la solicitud.</p>
+          <button type="button" class="doc-link" (click)="loadAvailability()">Actualizar disponibilidad</button>
+        }
+      </section>
+    }
+
     <div class="actions-bar" *ngIf="isActionable">
       <button (click)="confirmApprove()" [disabled]="processing()" class="btn-approve">
         ✓ Aprobar Solicitud

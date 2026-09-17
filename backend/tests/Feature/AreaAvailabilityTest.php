@@ -95,4 +95,84 @@ class AreaAvailabilityTest extends TestCase {
             $this->patchJson("/api/hr/areas/{$this->area->id}/status", ['active' => $active])->assertOk()->assertJsonPath('data.active', $active)->assertJsonPath('data.max_simultaneous_permissions', 2);
         }
     }
+
+    public function test_hr_summary_counts_only_other_distinct_approved_workers_per_day_without_private_data(): void {
+        $day = \Carbon\CarbonImmutable::parse($this->date);
+        $next = $day->addDay()->toDateString();
+        $last = $day->addDays(2)->toDateString();
+        $requester = $this->worker();
+        $request = $this->approved('PENDIENTE', $requester);
+        $request->update(['end_date' => $last]);
+        $other = $this->worker();
+        $this->approved('APROBADA', $other)->update(['start_date' => $day->subDay()->toDateString(), 'end_date' => $next]);
+        $this->approved('APROBADA', $other); // Solapamiento: no duplica a la persona.
+        $this->approved()->update(['start_date' => $next, 'end_date' => $next]);
+        $this->approved('APROBADA', $requester); // El solicitante no ocupa otro cupo.
+        foreach (['PENDIENTE', 'RECHAZADA', 'CANCELADA'] as $status) $this->approved($status);
+        $this->approved('APROBADA', $this->worker(Area::create(['name' => 'Otra'])));
+        $absence = RequestCategory::create(['name' => 'Falta', 'is_absence' => true]);
+        $this->approved('APROBADA', null, $absence);
+
+        Sanctum::actingAs($requester->user);
+        $blocked = $this->getJson("/api/requests/availability?from={$this->date}&to={$last}")
+            ->assertOk()->json('data.blocked_dates');
+        $role = Role::firstOrCreate(['code' => Role::HR], ['name' => 'RRHH']);
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        $response = $this->getJson("/api/hr/requests/{$request->id}/availability?from={$this->date}&to={$last}")
+            ->assertOk()->assertExactJson([
+                'success' => true, 'message' => 'Operación realizada correctamente',
+                'data' => ['blocked_dates' => [$next], 'is_exempt' => false, 'dates' => [
+                    ['date' => $this->date, 'approved_count' => 1, 'limit' => 2, 'available' => true],
+                    ['date' => $next, 'approved_count' => 2, 'limit' => 2, 'available' => false],
+                    ['date' => $last, 'approved_count' => 0, 'limit' => 2, 'available' => true],
+                ]],
+            ]);
+        $this->assertSame($blocked, $response->json('data.blocked_dates'));
+        $response->assertHeader('Cache-Control', 'no-store, private');
+        $this->assertDatabaseHas('labor_requests', ['id' => $request->id, 'status' => 'PENDIENTE']);
+        // Consultar un tramo del rango conserva los permisos iniciados antes del tramo.
+        $this->getJson("/api/hr/requests/{$request->id}/availability?from={$next}&to={$next}")
+            ->assertOk()->assertJsonPath('data.dates.0.approved_count', 2);
+    }
+
+    public function test_hr_absence_summary_is_informational_even_when_capacity_is_full(): void {
+        $this->date = today()->subDay()->toDateString();
+        $this->approved(); $this->approved();
+        $absence = RequestCategory::create(['name' => 'Justificación', 'is_absence' => true, 'maximum_past_days' => 7]);
+        $request = $this->approved('PENDIENTE', null, $absence);
+        $role = Role::firstOrCreate(['code' => Role::HR], ['name' => 'RRHH']);
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        $this->getJson("/api/hr/requests/{$request->id}/availability?from={$this->date}&to={$this->date}")
+            ->assertOk()->assertJsonPath('data', [
+                'blocked_dates' => [], 'dates' => [
+                    ['date' => $this->date, 'approved_count' => 2, 'limit' => 2, 'available' => true],
+                ], 'is_exempt' => true,
+            ]);
+    }
+
+    public function test_hr_summary_reports_actual_counts_when_area_has_no_limit(): void {
+        $this->area->update(['max_simultaneous_permissions' => null]);
+        $this->approved(); $this->approved();
+        $request = $this->approved('PENDIENTE');
+        $role = Role::firstOrCreate(['code' => Role::HR], ['name' => 'RRHH']);
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        $this->getJson("/api/hr/requests/{$request->id}/availability?from={$this->date}&to={$this->date}")
+            ->assertOk()->assertJsonPath('data.dates.0', [
+                'date' => $this->date, 'approved_count' => 2, 'limit' => null, 'available' => true,
+            ])->assertJsonPath('data.blocked_dates', []);
+    }
+
+    public function test_hr_summary_requires_hr_role_and_valid_dates_within_the_request(): void {
+        $request = $this->approved('PENDIENTE');
+        $url = "/api/hr/requests/{$request->id}/availability";
+        $this->getJson("{$url}?from={$this->date}&to={$this->date}")->assertForbidden();
+        $role = Role::firstOrCreate(['code' => Role::HR], ['name' => 'RRHH']);
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        $this->getJson($url)->assertUnprocessable()->assertJsonValidationErrors(['from', 'to']);
+        $this->getJson("{$url}?from=bad&to=bad")->assertUnprocessable();
+        $outside = today()->addDays(6)->toDateString();
+        $this->getJson("{$url}?from={$this->date}&to={$outside}")->assertUnprocessable()->assertJsonValidationErrors('from');
+        $this->getJson("{$url}?from={$outside}&to={$this->date}")->assertUnprocessable()->assertJsonValidationErrors('to');
+        $this->getJson("/api/hr/requests/999999/availability?from={$this->date}&to={$this->date}")->assertNotFound();
+    }
 }
