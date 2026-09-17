@@ -57,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('categories/{category}/status', [HrController::class, 'categoryStatus']);
         Route::get('requests', [HrController::class, 'requests']);
         Route::get('requests/{request}', [HrController::class, 'showRequest']);
+        Route::get('requests/{request}/availability', [RequestAvailabilityController::class, 'forHrRequest']);
         Route::get('requests/{request}/documents/{document}', [LaborRequestController::class, 'download']);
         Route::post('requests/{request}/approve', [HrController::class, 'approve']);
         Route::post('requests/{request}/reject', [HrController::class, 'reject']);

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  RequestCategory, ApiResponse, HrDashboardStats,
+  RequestCategory, ApiResponse, HrDashboardStats, AreaAvailabilitySummary,
   LeaveRequest, RequestFilters, RejectRequestPayload,
 } from '../models/index';
 import { apiList, mapCategory, mapDashboard, mapRequest, mapResponse } from '../mappers/api.mappers';
@@ -84,6 +84,12 @@ export class HrRequestService {
       return of({ success: true, message: 'OK', data: req });
     }
     return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}`).pipe(map(res => mapResponse(res, mapRequest)));
+  }
+
+  getAvailability(id: number, from: string, to: string): Observable<ApiResponse<AreaAvailabilitySummary>> {
+    return this.http.get<ApiResponse<AreaAvailabilitySummary>>(`${this.apiUrl}/${id}/availability`, {
+      params: { from, to, 'ngsw-bypass': 'true' },
+    });
   }
 
   approve(id: number): Observable<ApiResponse<LeaveRequest>> {
