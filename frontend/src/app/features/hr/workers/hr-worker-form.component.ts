@@ -1,22 +1,31 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { HrWorkerService } from '../../../core/services/hr-worker.service';
 import { HrAreaService, HrPositionService } from '../../../core/services/hr-area-position.service';
+import { WorkerPhotoComponent } from '../../../shared/components/worker-photo.component';
 import { Area, Position, CreateWorkerPayload } from '../../../core/models/index';
 
 @Component({
   selector: 'app-hr-worker-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, WorkerPhotoComponent],
   template: `
     <div class="form-container">
       <div class="form-card">
         <h2>{{ isEdit ? 'Editar Trabajador' : 'Nuevo Trabajador' }}</h2>
         <p class="subtitle">Ingresa la información personal y laboral del empleado.</p>
 
-        <form (ngSubmit)="onSubmit()" #form="ngForm">
+        @if (error) { <div class="alert alert-error" role="alert">{{ error }}</div> }
+        <form (ngSubmit)="onSubmit(form)" #form="ngForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="worker-photo">Foto (JPG, PNG o WEBP, máximo 5 MB)</label>
+              <div class="photo-preview"><app-worker-photo [workerId]="workerId" [hasPhoto]="hasPhoto" [preview]="photoPreview" [initials]="payload.name.charAt(0)" /></div>
+              <input id="worker-photo" type="file" accept=".jpg,.jpeg,.png,.webp" (change)="selectPhoto($event)" [disabled]="loading" />
+            </div>
+          </div>
           <div class="form-row">
             <div class="form-group">
               <label>Nombres *</label>
@@ -43,18 +52,31 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
 
           <div class="form-row">
             <div class="form-group">
+              <label for="birth-date">Fecha de nacimiento *</label>
+              <input id="birth-date" type="date" [(ngModel)]="payload.birth_date" name="birth_date" required [max]="maximumBirthDate" class="input-control" />
+            </div>
+            <div class="form-group">
+              <label for="worker-type">Tipo de trabajador *</label>
+              <select id="worker-type" [(ngModel)]="payload.worker_type" name="worker_type" required class="input-control">
+                <option [ngValue]="null" disabled>Selecciona un tipo</option>
+                <option value="EMPLEADO">Empleado</option><option value="OBRERO">Obrero</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>Área *</label>
               <select [(ngModel)]="payload.area_id" name="area_id" required class="input-control">
-                <option [ngValue]="undefined" disabled>Selecciona un área</option>
-                <option *ngFor="let a of areas" [value]="a.id">{{ a.name }}</option>
+                <option [ngValue]="0" disabled>Selecciona un área</option>
+                <option *ngFor="let a of selectableAreas" [value]="a.id">{{ a.name }}{{ !a.active ? ' (inactiva)' : '' }}</option>
               </select>
             </div>
 
             <div class="form-group">
               <label>Cargo *</label>
               <select [(ngModel)]="payload.position_id" name="position_id" required class="input-control">
-                <option [ngValue]="undefined" disabled>Selecciona un cargo</option>
-                <option *ngFor="let p of positions" [value]="p.id">{{ p.name }}</option>
+                <option [ngValue]="0" disabled>Selecciona un cargo</option>
+                <option *ngFor="let p of selectablePositions" [value]="p.id">{{ p.name }}{{ !p.active ? ' (inactivo)' : '' }}</option>
               </select>
             </div>
           </div>
@@ -66,11 +88,21 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
             </div>
 
             <div class="form-group">
-              <label>Dirección</label>
+              <label>Dirección de residencia</label>
               <input type="text" [(ngModel)]="payload.address" name="address" class="input-control" />
             </div>
           </div>
 
+          <div class="form-row">
+            <div class="form-group">
+              <label>Dirección según DNI</label>
+              <input type="text" [(ngModel)]="payload.dni_address" name="dni_address" maxlength="255" class="input-control" />
+            </div>
+            <div class="form-group">
+              <label>Teléfono de emergencia</label>
+              <input type="tel" [(ngModel)]="payload.emergency_phone" name="emergency_phone" maxlength="30" class="input-control" />
+            </div>
+          </div>
           <div class="form-row">
             <div class="form-group">
               <label>Tope mensual de permisos</label>
@@ -93,7 +125,7 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
 
           <div class="form-actions">
             <a routerLink="/hr/workers" class="btn-cancel">Cancelar</a>
-            <button type="submit" [disabled]="!form.valid || loading" class="btn-submit">
+            <button type="submit" [disabled]="!form.valid || loading || !payload.area_id || !payload.position_id" class="btn-submit">
               {{ loading ? 'Guardando...' : (isEdit ? 'Guardar Cambios' : 'Crear Trabajador') }}
             </button>
           </div>
@@ -102,6 +134,7 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
     </div>
   `,
   styles: [`
+    .photo-preview { width:96px; height:96px; border-radius:50%; background:var(--color-primary); color:white; }
     .form-container {
       padding: 1.5rem;
       max-width: 750px;
@@ -126,10 +159,14 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
     .form-group {
       display: flex;
       flex-direction: column;
+      min-width: 0;
       gap: 0.4rem;
       label { font-size: 0.8rem; font-weight: 700; color: #475569; }
     }
     .input-control {
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
       padding: 0.7rem 0.9rem;
       border-radius: 10px;
       border: 1px solid #cbd5e1;
@@ -167,7 +204,8 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
     }
   `]
 })
-export class HrWorkerFormComponent implements OnInit {
+export class HrWorkerFormComponent implements OnInit, OnDestroy {
+  private cdr = inject(ChangeDetectorRef);
   private workerService = inject(HrWorkerService);
   private areaService = inject(HrAreaService);
   private positionService = inject(HrPositionService);
@@ -178,6 +216,14 @@ export class HrWorkerFormComponent implements OnInit {
   workerId?: number;
   loading = false;
 
+  error = '';
+  hasPhoto = false;
+  photoPreview: string | null = null;
+  private originalArea?: number;
+  private originalPosition?: number;
+  maximumBirthDate = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-'); })();
+  get selectableAreas() { return this.areas.filter(a => a.active || (this.isEdit && a.id === this.originalArea)); }
+  get selectablePositions() { return this.positions.filter(p => p.active || (this.isEdit && p.id === this.originalPosition)); }
   areas: Area[] = [];
   positions: Position[] = [];
 
@@ -187,8 +233,10 @@ export class HrWorkerFormComponent implements OnInit {
     email: '',
     dni: '',
     password: '',
-    area_id: 1,
-    position_id: 1,
+    area_id: 0,
+    position_id: 0,
+    worker_type: null,
+    birth_date: '',
     phone: '',
     address: ''
   };
@@ -205,14 +253,17 @@ export class HrWorkerFormComponent implements OnInit {
   }
 
   loadOptions(): void {
-    this.areaService.getAll().subscribe(res => { if (res.success && res.data) this.areas = res.data; });
-    this.positionService.getAll().subscribe(res => { if (res.success && res.data) this.positions = res.data; });
+    this.areaService.getAll().subscribe(res => { if (res.success && res.data) this.areas = res.data; this.cdr.markForCheck(); });
+    this.positionService.getAll().subscribe(res => { if (res.success && res.data) this.positions = res.data; this.cdr.markForCheck(); });
   }
 
   loadWorker(id: number): void {
     this.workerService.getById(id).subscribe(res => {
       if (res.success && res.data) {
         const w = res.data;
+        this.originalArea = w.area?.id;
+        this.originalPosition = w.position?.id;
+        this.hasPhoto = !!w.has_photo;
         this.payload = {
           name: w.name,
           last_name: w.last_name,
@@ -223,23 +274,53 @@ export class HrWorkerFormComponent implements OnInit {
           position_id: w.position?.id ?? 1,
           phone: w.phone ?? '',
           address: w.address ?? '',
+          dni_address: w.dni_address ?? '',
+          emergency_phone: w.emergency_phone ?? '',
+          worker_type: w.worker_type ?? null,
+          birth_date: w.birth_date ?? '',
           monthly_permission_limit: w.monthly_permission_limit ?? null,
           monthly_absence_limit: w.monthly_absence_limit ?? null,
         };
+        this.cdr.markForCheck();
       }
     });
   }
 
-  onSubmit(): void {
-    this.loading = true;
-    if (this.isEdit && this.workerId) {
-      this.workerService.update(this.workerId, this.payload).subscribe(() => {
-        this.router.navigate(['/hr/workers']);
-      });
-    } else {
-      this.workerService.create(this.payload).subscribe(() => {
-        this.router.navigate(['/hr/workers']);
-      });
+  selectPhoto(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || this.loading) return;
+    if (!/\.(jpe?g|png|webp)$/i.test(file.name) || !file.size || file.size > 5 * 1024 * 1024) {
+      this.error = 'Selecciona una imagen JPG, PNG o WEBP de hasta 5 MB.';
+      input.value = '';
+      return;
     }
+    this.error = '';
+    if (this.photoPreview) URL.revokeObjectURL(this.photoPreview);
+    this.payload.photo = file;
+    this.photoPreview = URL.createObjectURL(file);
+  }
+  ngOnDestroy(): void { if (this.photoPreview) URL.revokeObjectURL(this.photoPreview); }
+  onSubmit(form: NgForm): void {
+    if (this.loading || !form.valid || !this.payload.area_id || !this.payload.position_id) return;
+    this.loading = true;
+    this.error = '';
+    const save = this.isEdit && this.workerId
+      ? this.workerService.update(this.workerId, this.payload)
+      : this.workerService.create(this.payload);
+    save.subscribe({
+      next: res => {
+        this.loading = false;
+        if (res.success) this.router.navigate(['/hr/workers']);
+        else this.error = res.message;
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.loading = false;
+        this.error = (Object.values(err?.error?.errors ?? {}).flat()[0] as string)
+          || err?.error?.message || 'No se pudo guardar el trabajador.';
+        this.cdr.markForCheck();
+      },
+    });
   }
 }

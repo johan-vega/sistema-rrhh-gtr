@@ -18,6 +18,8 @@ use App\Models\RequestCategory;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Worker;
+use App\Services\WorkerPhotoService;
+use Throwable;
 use App\Services\LaborRequestService;
 use App\Services\RequestReportExportService;
 use Illuminate\Http\Request;
@@ -53,16 +55,23 @@ class HrController extends ApiController
         return $this->success(WorkerResource::collection($q->orderBy('last_name')->paginate(20)));
     }
 
-    public function storeWorker(StoreWorkerRequest $request)
+    public function storeWorker(StoreWorkerRequest $request, WorkerPhotoService $photos)
     {
-        $worker = DB::transaction(function () use ($request) {
-            $data = $request->validated();
-            $role = Role::where('code', Role::WORKER)->firstOrFail();
-            $user = User::create(['name' => "{$data['first_name']} {$data['last_name']}", 'email' => $data['email'], 'password' => $data['password'], 'role_id' => $role->id]);
+        $data = $request->validated();
+        unset($data['photo']);
+        $newPhoto = $request->hasFile('photo') ? $photos->store($request->file('photo')) : null;
+        if ($newPhoto) $data['photo_path'] = $newPhoto;
+        try {
+            $worker = DB::transaction(function () use ($data) {
+                $role = Role::where('code', Role::WORKER)->firstOrFail();
+                $user = User::create(['name' => "{$data['first_name']} {$data['last_name']}", 'email' => $data['email'], 'password' => $data['password'], 'role_id' => $role->id]);
 
-            return Worker::create(array_merge(collect($data)->except(['email', 'password', 'password_confirmation'])->all(), ['user_id' => $user->id]));
-        });
-
+                return Worker::create(array_merge(collect($data)->except(['email', 'password', 'password_confirmation'])->all(), ['user_id' => $user->id]));
+            });
+        } catch (Throwable $exception) {
+            $photos->delete($newPhoto);
+            throw $exception;
+        }
         return $this->success(new WorkerResource($worker->load(['user', 'area', 'position'])), 'Trabajador creado correctamente', 201);
     }
 
@@ -71,13 +80,24 @@ class HrController extends ApiController
         return $this->success(new WorkerResource($worker->load(['user', 'area', 'position'])));
     }
 
-    public function updateWorker(UpdateWorkerRequest $request, Worker $worker)
+    public function updateWorker(UpdateWorkerRequest $request, Worker $worker, WorkerPhotoService $photos)
     {
-        DB::transaction(function () use ($request, $worker) {
-            $data = $request->validated();
-            $worker->user->update(['email' => $data['email'], 'name' => "{$data['first_name']} {$data['last_name']}"]);
-            $worker->update(collect($data)->except('email')->all());
-        });
+        $data = $request->validated();
+        unset($data['photo']);
+        $newPhoto = $request->hasFile('photo') ? $photos->store($request->file('photo')) : null;
+        $oldPhoto = null;
+        try {
+            DB::transaction(function () use ($worker, $data, $newPhoto, &$oldPhoto) {
+                $locked = Worker::whereKey($worker->id)->lockForUpdate()->firstOrFail();
+                $oldPhoto = $locked->photo_path;
+                $locked->user->update(['email' => $data['email'], 'name' => "{$data['first_name']} {$data['last_name']}"]);
+                $locked->update(array_merge(collect($data)->except('email')->all(), $newPhoto ? ['photo_path' => $newPhoto] : []));
+            });
+        } catch (Throwable $exception) {
+            $photos->delete($newPhoto);
+            throw $exception;
+        }
+        if ($newPhoto) $photos->delete($oldPhoto);
 
         return $this->success(new WorkerResource($worker->fresh()->load(['user', 'area', 'position'])), 'Trabajador actualizado correctamente');
     }
@@ -97,14 +117,14 @@ class HrController extends ApiController
 
     public function storeArea(ManageResourceRequest $request)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:150', 'unique:areas,name'], 'description' => ['nullable', 'string', 'max:1000'], 'monthly_permission_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'monthly_absence_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'active' => ['sometimes', 'boolean']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:150', 'unique:areas,name'], 'max_simultaneous_permissions' => ['nullable', 'integer', 'min:1', 'max:4294967295'], 'description' => ['nullable', 'string', 'max:1000'], 'monthly_permission_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'monthly_absence_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'active' => ['sometimes', 'boolean']]);
 
         return $this->success(new AreaResource(Area::create($data)), 'Área creada correctamente', 201);
     }
 
     public function updateArea(ManageResourceRequest $request, Area $area)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:150', "unique:areas,name,{$area->id}"], 'description' => ['nullable', 'string', 'max:1000'], 'monthly_permission_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'monthly_absence_limit' => ['nullable', 'integer', 'min:0', 'max:365']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:150', "unique:areas,name,{$area->id}"], 'max_simultaneous_permissions' => ['nullable', 'integer', 'min:1', 'max:4294967295'], 'description' => ['nullable', 'string', 'max:1000'], 'monthly_permission_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'monthly_absence_limit' => ['nullable', 'integer', 'min:0', 'max:365']]);
         $area->update($data);
 
         return $this->success(new AreaResource($area), 'Área actualizada correctamente');

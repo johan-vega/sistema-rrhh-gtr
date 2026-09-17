@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, of } from 'rxjs';
+import { Observable, defer, switchMap, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Worker, CreateWorkerPayload, UpdateWorkerPayload, ApiResponse,
@@ -39,6 +39,10 @@ export class HrWorkerService {
       const newW: Worker = { id: Date.now(), ...payload, full_name: `${payload.name} ${payload.last_name}`, active: true };
       return of({ success: true, message: 'Trabajador creado correctamente', data: newW });
     }
+    if (payload.photo) return defer(() => this.photoForm(payload, true)).pipe(
+      switchMap(form => this.http.post<ApiResponse<any>>(this.apiUrl, form, { params: { 'ngsw-bypass': 'true' } })),
+      map(res => mapResponse(res, mapWorker)),
+    );
     return this.http.post<ApiResponse<any>>(this.apiUrl, this.toBackendPayload(payload, true)).pipe(map(res => mapResponse(res, mapWorker)));
   }
 
@@ -47,6 +51,10 @@ export class HrWorkerService {
       const w = MOCK_WORKERS.find(w => w.id === id) ?? MOCK_WORKERS[0];
       return of({ success: true, message: 'Trabajador actualizado', data: { ...w, ...payload } });
     }
+    if (payload.photo) return defer(() => this.photoForm(payload, false)).pipe(
+      switchMap(form => this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}`, form, { params: { 'ngsw-bypass': 'true' } })),
+      map(res => mapResponse(res, mapWorker)),
+    );
     return this.http.put<ApiResponse<any>>(`${this.apiUrl}/${id}`, this.toBackendPayload(payload)).pipe(map(res => mapResponse(res, mapWorker)));
   }
 
@@ -59,8 +67,20 @@ export class HrWorkerService {
     return this.http.patch<ApiResponse<any>>(`${this.apiUrl}/${id}/status`, { active }).pipe(map(res => mapResponse(res, mapWorker)));
   }
 
+  private async photoForm(payload: CreateWorkerPayload | UpdateWorkerPayload, creating: boolean): Promise<FormData> {
+    const form = new FormData();
+    Object.entries(this.toBackendPayload(payload, creating)).forEach(([key, value]) => {
+      if (value !== undefined) form.append(key, value === null ? '' : String(value));
+    });
+    if (!creating) form.append('_method', 'PUT');
+    const photo = payload.photo!;
+    const bytes = await photo.arrayBuffer();
+    form.append('photo', new Blob([bytes], { type: photo.type }), photo.name);
+    return form;
+  }
+
   private toBackendPayload(payload: CreateWorkerPayload | UpdateWorkerPayload, creating = false): Record<string, unknown> {
-    const { name, last_name, ...rest } = payload;
+    const { name, last_name, photo, has_photo, ...rest } = payload;
     return {
       ...rest,
       first_name: name,

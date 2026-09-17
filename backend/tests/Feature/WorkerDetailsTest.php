@@ -1,0 +1,92 @@
+<?php
+namespace Tests\Feature;
+use App\Models\{Area, Position, Role, User, Worker};
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+class WorkerDetailsTest extends TestCase {
+    use RefreshDatabase;
+    protected function setUp(): void {
+        parent::setUp();
+        config(['filesystems.default' => 's3']);
+        Storage::fake('s3');
+        $hr = Role::firstOrCreate(['code' => Role::HR], ['name' => 'RRHH']);
+        Role::firstOrCreate(['code' => Role::WORKER], ['name' => 'Trabajador']);
+        Sanctum::actingAs(User::factory()->create(['role_id' => $hr->id]));
+    }
+    private function payload(): array {
+        return [
+            'first_name' => 'Ana', 'last_name' => 'Pérez', 'dni' => fake()->unique()->numerify('########'),
+            'email' => fake()->unique()->safeEmail(), 'password' => 'Password123!', 'password_confirmation' => 'Password123!',
+            'area_id' => Area::firstOrCreate(['name' => 'Producción'])->id,
+            'position_id' => Position::firstOrCreate(['name' => 'Operario'])->id,
+            'address' => 'Residencia 123', 'dni_address' => 'Dirección DNI 456', 'phone' => '987654321',
+            'emergency_phone' => '912345678', 'worker_type' => 'OBRERO', 'birth_date' => '1990-05-20',
+        ];
+    }
+    private function photo(): UploadedFile {
+        return UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='));
+    }
+    public function test_hr_creates_and_updates_new_fields_and_private_photo(): void {
+        $data = $this->payload();
+        $id = $this->post('/api/hr/workers', [...$data, 'photo' => $this->photo()], ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonPath('data.worker_type', 'OBRERO')->assertJsonPath('data.birth_date', '1990-05-20')
+            ->assertJsonPath('data.dni_address', 'Dirección DNI 456')->assertJsonPath('data.has_photo', true)->assertJsonMissingPath('data.photo_path')->json('data.id');
+        $old = Worker::findOrFail($id)->photo_path;
+        Storage::disk('s3')->assertExists($old);
+        $this->get("/api/workers/$id/photo")->assertOk()->assertHeader('X-Content-Type-Options', 'nosniff');
+        $data['worker_type'] = 'EMPLEADO';
+        $data['emergency_phone'] = '900000000';
+        $this->post("/api/hr/workers/$id", [...$data, '_method' => 'PUT', 'photo' => $this->photo()], ['Accept' => 'application/json'])
+            ->assertOk()->assertJsonPath('data.worker_type', 'EMPLEADO')->assertJsonPath('data.emergency_phone', '900000000');
+        $new = Worker::findOrFail($id)->photo_path;
+        $this->assertNotSame($old, $new);
+        Storage::disk('s3')->assertMissing($old);
+        Storage::disk('s3')->assertExists($new);
+        $this->putJson("/api/hr/workers/$id", $data)->assertOk()->assertJsonPath('data.has_photo', true);
+        $this->assertSame($new, Worker::findOrFail($id)->photo_path);
+    }
+    public function test_invalid_type_birth_date_and_photo_are_rejected(): void {
+        $data = $this->payload();
+        foreach (['CONTRATISTA', '', 'empleado'] as $type) {
+            $this->postJson('/api/hr/workers', [...$data, 'worker_type' => $type])->assertUnprocessable()->assertJsonValidationErrors('worker_type');
+        }
+        foreach ([today()->toDateString(), today()->addDay()->toDateString(), ''] as $date) {
+            $this->postJson('/api/hr/workers', [...$data, 'birth_date' => $date])->assertUnprocessable()->assertJsonValidationErrors('birth_date');
+        }
+        foreach ([UploadedFile::fake()->create('foto.jpg', 5121, 'image/jpeg'), UploadedFile::fake()->create('archivo.pdf', 10, 'application/pdf')] as $photo) {
+            $this->post('/api/hr/workers', [...$data, 'photo' => $photo], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('photo');
+        }
+        $this->assertDatabaseCount('workers', 0);
+    }
+    public function test_legacy_worker_requires_actual_birth_date_and_type_when_editing(): void {
+        $data = $this->payload();
+        $user = User::factory()->create(['role_id' => Role::where('code', Role::WORKER)->firstOrFail()->id]);
+        $worker = Worker::create(collect($data)->except(['password', 'password_confirmation', 'email', 'worker_type', 'birth_date'])->all() + ['user_id' => $user->id]);
+        $this->getJson("/api/hr/workers/{$worker->id}")->assertOk()->assertJsonPath('data.birth_date', null)->assertJsonPath('data.worker_type', null);
+        $this->putJson("/api/hr/workers/{$worker->id}", [...$data, 'worker_type' => null, 'birth_date' => null])
+            ->assertUnprocessable()->assertJsonValidationErrors(['birth_date', 'worker_type']);
+        $this->putJson("/api/hr/workers/{$worker->id}", $data)->assertOk();
+    }
+    public function test_worker_only_views_own_photo_and_cannot_edit_hr_only_fields(): void {
+        $data = $this->payload();
+        $id = $this->post('/api/hr/workers', [...$data, 'photo' => $this->photo()], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+        $other = $this->postJson('/api/hr/workers', $this->payload())->assertCreated()->json('data.id');
+        Sanctum::actingAs(Worker::findOrFail($id)->user);
+        $this->get("/api/workers/$id/photo")->assertOk();
+        $this->getJson("/api/workers/$other/photo")->assertForbidden();
+        $this->putJson('/api/profile', ['address' => 'Nueva casa', 'phone' => '900000001', 'dni_address' => 'NO', 'birth_date' => '2000-01-01', 'worker_type' => 'EMPLEADO', 'first_name' => 'NO', 'dni' => 'NO', 'area_id' => 999, 'position_id' => 999, 'emergency_phone' => 'NO'])
+            ->assertOk()->assertJsonPath('data.address', 'Nueva casa')->assertJsonPath('data.dni_address', $data['dni_address'])->assertJsonPath('data.birth_date', $data['birth_date'])->assertJsonPath('data.worker_type', 'OBRERO');
+    }
+    public function test_inactive_area_and_position_cannot_be_assigned_but_current_references_are_kept(): void {
+        $data = $this->payload();
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');
+        Area::findOrFail($data['area_id'])->update(['active' => false]);
+        Position::findOrFail($data['position_id'])->update(['active' => false]);
+        $this->postJson('/api/hr/workers', $this->payload())->assertUnprocessable()->assertJsonValidationErrors(['area_id', 'position_id']);
+        $this->putJson("/api/hr/workers/$id", $data)->assertOk()->assertJsonPath('data.area.active', false);
+    }
+}

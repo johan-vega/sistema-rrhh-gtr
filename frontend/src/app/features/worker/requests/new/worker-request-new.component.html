@@ -64,9 +64,9 @@
         <label class="form-label" for="start_date">
           Fecha inicial <span class="required">*</span>
         </label>
-        <input id="start_date" type="date" class="form-control" formControlName="start_date"
+        <input id="start_date" type="date" class="form-control" formControlName="start_date" [appAreaAvailability]="selectedCategory()"
           [min]="minimumSelectableDate" [class.is-invalid]="startCtrl.invalid && startCtrl.touched" />
-        @if (startCtrl.invalid && startCtrl.touched) {
+        @if (startCtrl.hasError('required') && startCtrl.touched) {
           <span class="form-error">Fecha requerida.</span>
         }
       </div>
@@ -74,14 +74,18 @@
         <label class="form-label" for="end_date">
           Fecha final <span class="required">*</span>
         </label>
-        <input id="end_date" type="date" class="form-control" formControlName="end_date"
+        <input id="end_date" type="date" class="form-control" formControlName="end_date" [appAreaAvailability]="selectedCategory()" [availabilityStart]="startCtrl.value"
           [min]="form.get('start_date')?.value || minimumSelectableDate" [class.is-invalid]="endCtrl.invalid && endCtrl.touched" />
-        @if (endCtrl.invalid && endCtrl.touched) {
+        @if (endCtrl.hasError('required') && endCtrl.touched) {
           <span class="form-error">Fecha requerida.</span>
         }
       </div>
     </div>
 
+    @if (form.pending) { <p class="form-hint" role="status">Comprobando disponibilidad del área...</p> }
+    @if (startCtrl.getError('areaAvailability') || endCtrl.getError('areaAvailability')) {
+      <div class="alert alert-warning" role="alert">{{ startCtrl.getError('areaAvailability') || endCtrl.getError('areaAvailability') }}</div>
+    }
     <!-- Motivo -->
     <div class="form-group">
       <label class="form-label" for="reason">
@@ -130,7 +134,7 @@
     </div>
 
     <!-- Submit -->
-    <button id="btn-enviar-solicitud" type="submit" class="btn btn-primary btn-full btn-lg" [disabled]="loading()">
+    <button id="btn-enviar-solicitud" type="submit" class="btn btn-primary btn-full btn-lg" [disabled]="loading() || form.pending || startCtrl.hasError('areaAvailability') || endCtrl.hasError('areaAvailability')">
       @if (loading()) {
         <span class="spinner"></span>
         Enviando solicitud...
