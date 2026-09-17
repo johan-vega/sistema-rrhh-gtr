@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, of } from 'rxjs';
+import { Observable, map, of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   RequestCategory, ApiResponse, HrDashboardStats, AreaAvailabilitySummary,
@@ -90,6 +90,11 @@ export class HrRequestService {
     return this.http.get<ApiResponse<AreaAvailabilitySummary>>(`${this.apiUrl}/${id}/availability`, {
       params: { from, to, 'ngsw-bypass': 'true' },
     });
+  }
+
+  deleteRequest(id: number): Observable<ApiResponse<null>> {
+    if (environment.useMocks) return throwError(() => new Error('La eliminación requiere el backend real.'));
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`);
   }
 
   approve(id: number): Observable<ApiResponse<LeaveRequest>> {

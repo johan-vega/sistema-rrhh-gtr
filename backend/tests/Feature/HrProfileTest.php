@@ -49,4 +49,15 @@ class HrProfileTest extends TestCase
             'password_confirmation' => 'nueva-clave-segura',
         ])->assertUnprocessable();
     }
+
+    public function test_hr_password_keeps_eight_character_minimum(): void
+    {
+        $hr = $this->hr();
+        Sanctum::actingAs($hr);
+        $this->putJson('/api/hr/profile', [
+            'name' => $hr->name, 'email' => $hr->email, 'current_password' => 'password',
+            'password' => '010190', 'password_confirmation' => '010190',
+        ])->assertUnprocessable()->assertJsonValidationErrors('password');
+        $this->assertTrue(Hash::check('password', $hr->fresh()->password));
+    }
 }

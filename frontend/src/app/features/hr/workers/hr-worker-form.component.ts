@@ -118,7 +118,8 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
             <div class="form-row">
               <div class="form-group">
                 <label>Contraseña inicial *</label>
-                <input type="password" [(ngModel)]="payload.password" name="password" required minlength="8" autocomplete="new-password" class="input-control" />
+                <input type="password" [(ngModel)]="payload.password" name="password" required minlength="6" autocomplete="new-password" aria-describedby="worker-password-help" class="input-control" />
+                <small id="worker-password-help">Mínimo 6 caracteres. Puede contener solo números; se ingresa manualmente.</small>
               </div>
             </div>
           }

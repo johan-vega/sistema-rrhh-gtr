@@ -144,7 +144,17 @@
         ✕ Rechazar Solicitud
       </button>
     </div>
+    <div class="actions-bar">
+      <button type="button" class="btn btn-danger" [disabled]="processing()" (click)="showDelete.set(true)">Eliminar solicitud</button>
+    </div>
+    @if (deleteError()) { <p role="alert" class="doc-error">{{ deleteError() }}</p> }
   </div>
+
+  @if (showDelete()) {
+    <app-confirm-dialog title="Eliminar solicitud definitivamente"
+      message="Se eliminarán definitivamente esta solicitud, su historial y sus documentos adjuntos. Esta acción no se puede deshacer. ¿Deseas continuar?"
+      confirmLabel="Eliminar definitivamente" (confirmed)="deleteRequest()" (dismissed)="showDelete.set(false)" />
+  }
 
   <app-confirm-dialog *ngIf="showApprove()" title="Aprobar Solicitud"
     message="¿Confirmas la aprobación de esta solicitud?" confirmLabel="Aprobar" confirmClass="btn-success"
