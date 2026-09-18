@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, defer, switchMap, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  Worker, CreateWorkerPayload, UpdateWorkerPayload, ApiResponse,
+  Worker, CreateWorkerPayload, UpdateWorkerPayload, ApiResponse, PaginatedResponse,
 } from '../models/index';
 import { apiList, mapResponse, mapWorker } from '../mappers/api.mappers';
 
@@ -24,6 +24,23 @@ export class HrWorkerService {
     return this.http.get<ApiResponse<any>>(this.apiUrl).pipe(
       map(res => mapResponse(res, data => apiList(data).map(mapWorker))),
     );
+  }
+
+  getPage(page = 1, search = ''): Observable<PaginatedResponse<Worker>> {
+    if (environment.useMocks) {
+      const terms = search.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      const workers = MOCK_WORKERS.filter(worker => terms.every(term =>
+        `${worker.full_name} ${worker.dni} ${worker.area?.name ?? ''}`.toLowerCase().includes(term)));
+      return of({ success: true, message: 'OK', data: {
+        items: workers.slice((page - 1) * 20, page * 20), total: workers.length, page, per_page: 20,
+      } });
+    }
+    return this.http.get<ApiResponse<any> & { meta: Omit<PaginatedResponse<Worker>['data'], 'items'> }>(this.apiUrl, {
+      params: { page, search: search.trim() },
+    }).pipe(map(res => ({
+      success: res.success, message: res.message,
+      data: { ...res.meta, items: apiList(res.data).map(mapWorker) },
+    })));
   }
 
   getById(id: number): Observable<ApiResponse<Worker>> {

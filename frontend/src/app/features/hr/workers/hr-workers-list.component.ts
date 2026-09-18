@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Subscription, timer, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -24,13 +25,24 @@ import { Worker } from '../../../core/models/index';
         <input 
           type="text" 
           [(ngModel)]="searchQuery" 
+          (ngModelChange)="searchWorkers()"
+          aria-label="Buscar trabajadores por nombre, DNI o área"
+          maxlength="255"
           placeholder="Buscar por nombre, DNI o área..." 
           class="input-search" 
         />
       </div>
 
-      <div class="workers-grid">
-        <div *ngFor="let worker of filteredWorkers()" class="worker-card">
+      <p *ngIf="loading()" role="status">Cargando trabajadores…</p>
+      <div *ngIf="error()" role="alert">
+        {{ error() }} <button class="btn-toggle" (click)="loadWorkers(page())">Reintentar</button>
+      </div>
+      <p *ngIf="!loading() && !error()" role="status" class="results-count">
+        Mostrando {{ workers().length ? (page() - 1) * perPage() + 1 : 0 }}–{{ workers().length ? (page() - 1) * perPage() + workers().length : 0 }} de {{ total() }} trabajadores
+      </p>
+      <p *ngIf="!loading() && !error() && !workers().length">No se encontraron trabajadores.</p>
+      <div class="workers-grid" [attr.aria-busy]="loading()">
+        <div *ngFor="let worker of workers()" class="worker-card">
           <div class="card-header">
             <div class="avatar"><app-worker-photo [workerId]="worker.id" [hasPhoto]="!!worker.has_photo" [initials]="getInitials(worker.name, worker.last_name)" /></div>
             <div class="worker-info">
@@ -69,6 +81,11 @@ import { Worker } from '../../../core/models/index';
           </div>
         </div>
       </div>
+      <nav class="pagination" aria-label="Paginación de trabajadores">
+        <button class="btn-toggle previous" [disabled]="loading() || page() <= 1" (click)="loadWorkers(page() - 1)">Anterior</button>
+        <span>Página {{ page() }} de {{ lastPage() }}</span>
+        <button class="btn-toggle next" [disabled]="loading() || page() >= lastPage()" (click)="loadWorkers(page() + 1)">Siguiente</button>
+      </nav>
     </div>
   `,
   styles: [`
@@ -109,9 +126,12 @@ import { Worker } from '../../../core/models/index';
     }
     .workers-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
       gap: 1.25rem;
     }
+    .pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 1.25rem; }
+    .pagination .btn-toggle { flex: 0 0 auto; padding: 0.5rem 1rem; }
+    .btn-toggle:disabled { opacity: 0.5; cursor: default; }
     .worker-card {
       background: #ffffff;
       border-radius: 16px;
@@ -192,32 +212,50 @@ import { Worker } from '../../../core/models/index';
     }
   `]
 })
-export class HrWorkersListComponent implements OnInit {
+export class HrWorkersListComponent implements OnInit, OnDestroy {
   private workerService = inject(HrWorkerService);
+  private listSubscription?: Subscription;
 
   workers = signal<Worker[]>([]);
+  page = signal(1);
+  perPage = signal(20);
+  total = signal(0);
+  loading = signal(false);
+  error = signal('');
   searchQuery = '';
 
   ngOnInit(): void {
     this.loadWorkers();
   }
 
-  loadWorkers(): void {
-    this.workerService.getAll().subscribe(res => {
-      if (res.success && res.data) {
-        this.workers.set(res.data);
-      }
-    });
-  }
+  ngOnDestroy(): void { this.listSubscription?.unsubscribe(); }
 
-  filteredWorkers(): Worker[] {
-    const q = this.searchQuery.toLowerCase().trim();
-    if (!q) return this.workers();
-    return this.workers().filter(w =>
-      w.full_name.toLowerCase().includes(q) ||
-      w.dni.includes(q) ||
-      (w.area?.name && w.area.name.toLowerCase().includes(q))
-    );
+  lastPage(): number { return Math.max(1, Math.ceil(this.total() / this.perPage())); }
+
+  searchWorkers(): void { this.loadWorkers(1, 300); }
+
+  loadWorkers(page = 1, delay = 0): void {
+    // Cancelar la consulta anterior para que una respuesta tardía no cambie la búsqueda actual.
+    this.listSubscription?.unsubscribe();
+    this.page.set(page);
+    this.loading.set(true);
+    this.error.set('');
+    this.workers.set([]);
+    const search = this.searchQuery;
+    this.listSubscription = timer(delay).pipe(switchMap(() => this.workerService.getPage(page, search))).subscribe({
+      next: res => {
+        this.loading.set(false);
+        if (!res.success) { this.error.set('No se pudo cargar la lista de trabajadores.'); return; }
+        this.workers.set(res.data.items);
+        this.page.set(res.data.page);
+        this.perPage.set(res.data.per_page);
+        this.total.set(res.data.total);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.error.set('No se pudo cargar la lista de trabajadores. Inténtalo nuevamente.');
+      },
+    });
   }
 
   getInitials(name: string, lastName: string): string {
