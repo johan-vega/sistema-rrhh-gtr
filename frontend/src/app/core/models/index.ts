@@ -43,7 +43,7 @@ export interface User extends WorkerPersonalDetails {
 
 export type UserRole = 'worker' | 'hr';
 
-export interface ProfileUpdatePayload {
+export interface ProfileUpdatePayload extends Pick<WorkerPersonalDetails, 'dni_address' | 'emergency_phone'> {
   address?: string;
   phone?: string;
 }
@@ -163,6 +163,8 @@ export interface CreateWorkerPayload extends WorkerPersonalDetails {
 }
 
 export interface UpdateWorkerPayload extends WorkerPersonalDetails {
+  password?: string;
+  password_confirmation?: string;
   photo?: File;
   name?: string;
   last_name?: string;

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\WorkerPhotoController;
+use App\Http\Controllers\WorkerDeletionController;
 use App\Http\Controllers\RequestAvailabilityController;
 use App\Http\Controllers\RequestDeletionController;
 use App\Http\Controllers\AuthController;
@@ -42,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('workers', [HrController::class, 'storeWorker']);
         Route::get('workers/{worker}', [HrController::class, 'showWorker']);
         Route::put('workers/{worker}', [HrController::class, 'updateWorker']);
+        Route::delete('workers/{worker}', WorkerDeletionController::class);
         Route::patch('workers/{worker}/status', [HrController::class, 'workerStatus']);
         Route::get('areas', [HrController::class, 'areas']);
         Route::post('areas', [HrController::class, 'storeArea']);

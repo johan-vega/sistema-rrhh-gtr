@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProfileService } from '../../../core/services/profile.service';
 import { WorkerPhotoComponent } from '../../../shared/components/worker-photo.component';
 import { User } from '../../../core/models/index';
@@ -58,8 +58,6 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
               </div>
               <div class="detail-row"><span class="detail-label">Fecha de nacimiento</span><span class="detail-value">{{ (user()!.birth_date | date:'dd/MM/yyyy') || '—' }}</span></div>
               <div class="detail-row"><span class="detail-label">Tipo de trabajador</span><span class="detail-value">{{ user()!.worker_type || '—' }}</span></div>
-              <div class="detail-row"><span class="detail-label">Dirección según DNI</span><span class="detail-value">{{ user()!.dni_address || '—' }}</span></div>
-              <div class="detail-row"><span class="detail-label">Teléfono de emergencia</span><span class="detail-value">{{ user()!.emergency_phone || '—' }}</span></div>
               <div class="detail-row"><span class="detail-label">Correo</span><span class="detail-value">{{ user()!.email }}</span></div>
             </div>
             <div class="readonly-notice">
@@ -83,7 +81,17 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
                 <input id="phone" type="tel" class="form-control" formControlName="phone"
                   placeholder="Tu número de teléfono" />
               </div>
-              <button id="btn-guardar-perfil" type="submit" class="btn btn-primary btn-full" [disabled]="saving()">
+              <div class="form-group">
+                <label class="form-label" for="dni-address">Dirección según DNI</label>
+                <input id="dni-address" type="text" class="form-control" formControlName="dni_address"
+                  maxlength="255" placeholder="Tu dirección según DNI" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="emergency-phone">Teléfono de emergencia</label>
+                <input id="emergency-phone" type="tel" class="form-control" formControlName="emergency_phone"
+                  maxlength="30" placeholder="Número de tu contacto de emergencia" />
+              </div>
+              <button id="btn-guardar-perfil" type="submit" class="btn btn-primary btn-full" [disabled]="saving() || form.invalid">
                 @if (saving()) { <span class="spinner"></span> Guardando... }
                 @else { Guardar cambios }
               </button>
@@ -123,13 +131,16 @@ export class WorkerProfileComponent implements OnInit {
   form = this.fb.group({
     address: [''],
     phone:   [''],
+    dni_address: ['', Validators.maxLength(255)],
+    emergency_phone: ['', Validators.maxLength(30)],
   });
 
   ngOnInit(): void {
     this.svc.get().subscribe({
       next: res => {
         this.user.set(res.data);
-        this.form.patchValue({ address: res.data.address ?? '', phone: res.data.phone ?? '' });
+        this.form.patchValue({ address: res.data.address ?? '', phone: res.data.phone ?? '',
+          dni_address: res.data.dni_address ?? '', emergency_phone: res.data.emergency_phone ?? '' });
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -137,12 +148,14 @@ export class WorkerProfileComponent implements OnInit {
   }
 
   onSave(): void {
-    if (this.saving()) return;
+    if (this.saving() || this.form.invalid) return;
     this.saving.set(true); this.saved.set(false); this.error.set('');
     const raw = this.form.getRawValue();
     const payload = {
       address: raw.address || undefined,
       phone: raw.phone || undefined,
+      dni_address: raw.dni_address?.trim() || null,
+      emergency_phone: raw.emergency_phone?.trim() || null,
     };
     this.svc.update(payload).subscribe({
       next: res => {

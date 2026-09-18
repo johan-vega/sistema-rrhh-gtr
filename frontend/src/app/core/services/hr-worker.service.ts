@@ -84,6 +84,15 @@ export class HrWorkerService {
     return this.http.patch<ApiResponse<any>>(`${this.apiUrl}/${id}/status`, { active }).pipe(map(res => mapResponse(res, mapWorker)));
   }
 
+  deleteWorker(id: number): Observable<ApiResponse<null>> {
+    if (environment.useMocks) {
+      const index = MOCK_WORKERS.findIndex(worker => worker.id === id);
+      if (index >= 0) MOCK_WORKERS.splice(index, 1);
+      return of({ success: true, message: 'Trabajador eliminado', data: null });
+    }
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`);
+  }
+
   private async photoForm(payload: CreateWorkerPayload | UpdateWorkerPayload, creating: boolean): Promise<FormData> {
     const form = new FormData();
     Object.entries(this.toBackendPayload(payload, creating)).forEach(([key, value]) => {
@@ -103,6 +112,7 @@ export class HrWorkerService {
       first_name: name,
       last_name,
       ...(creating ? { password_confirmation: (payload as CreateWorkerPayload).password } : {}),
+      ...(!creating && !payload.password ? { password: undefined, password_confirmation: undefined } : {}),
     };
   }
 }

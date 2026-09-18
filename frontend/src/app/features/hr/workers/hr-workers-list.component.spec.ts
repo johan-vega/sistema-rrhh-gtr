@@ -28,6 +28,47 @@ describe('Trabajadores: paginación y búsqueda en servidor', () => {
   });
   afterEach(() => { fixture.destroy(); http.verify(); });
 
+  it('pide confirmación, permite cancelar y actualiza la última página tras eliminar', async () => {
+    http.expectOne(req => req.url === url).flush(response(2, 21));
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+    el.querySelector<HTMLButtonElement>('.btn-delete')!.click();
+    await fixture.whenStable();
+    expect(el.querySelector('[role="dialog"]')?.textContent).toContain('Pérez 21');
+    el.querySelector<HTMLButtonElement>('.modal-footer .btn-secondary')!.click();
+    await fixture.whenStable();
+    http.expectNone(req => req.method === 'DELETE');
+    expect(el.querySelector('[role="dialog"]')).toBeNull();
+    el.querySelector<HTMLButtonElement>('.btn-delete')!.click();
+    await fixture.whenStable();
+    el.querySelector<HTMLButtonElement>('.modal-footer .btn-danger')!.click();
+    await fixture.whenStable();
+    expect(el.querySelector<HTMLButtonElement>('.btn-delete')!.disabled).toBe(true);
+    fixture.componentInstance.deleteWorker(); // Doble clic no debe emitir otro DELETE.
+    http.expectOne(req => req.url === `${url}/21` && req.method === 'DELETE').flush({ success: true, message: 'Trabajador eliminado', data: null });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    http.expectOne(req => req.url === url && req.params.get('page') === '2').flush(response(2, 20));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    http.expectOne(req => req.url === url && req.params.get('page') === '1').flush(response(1, 20));
+    await fixture.whenStable();
+    expect(fixture.componentInstance.page()).toBe(1);
+    expect(el.querySelector('.results-count')?.textContent).toContain('1–20 de 20');
+    expect(el.textContent).toContain('Trabajador eliminado');
+  });
+
+  it('conserva el trabajador y muestra la restricción si tiene solicitudes', async () => {
+    http.expectOne(req => req.url === url).flush(response(1));
+    await fixture.whenStable();
+    fixture.componentInstance.confirmDelete(fixture.componentInstance.workers()[0]);
+    fixture.componentInstance.deleteWorker();
+    const message = 'Tiene solicitudes registradas. Usa Desactivar para conservar su historial.';
+    http.expectOne(req => req.method === 'DELETE').flush({ message, errors: { worker: [message] } }, { status: 422, statusText: 'Unprocessable' });
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelectorAll('.worker-card')).toHaveLength(20);
+    expect(fixture.nativeElement.textContent).toContain(message);
+    expect(fixture.componentInstance.deleting()).toBe(false);
+  });
+
   it('muestra los 39 trabajadores en dos páginas sin duplicarlos y permite volver', async () => {
     const first = http.expectOne(req => req.url === url && req.params.get('page') === '1');
     first.flush(response(1));
