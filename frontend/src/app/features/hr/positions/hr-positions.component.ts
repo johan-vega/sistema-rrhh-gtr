@@ -230,8 +230,11 @@ export class HrPositionsComponent implements OnInit {
 
   toggleStatus(pos: Position): void {
     this.positionService.toggleStatus(pos.id, !pos.active).subscribe(res => {
-      if (res.success) {
-        pos.active = !pos.active;
+      if (res.success && res.data) {
+        // Reemplazar la lista notifica a Angular tras la respuesta asíncrona.
+        this.positions.update(list => list.map(item =>
+          item.id === pos.id ? { ...item, active: res.data.active } : item,
+        ));
       }
     });
   }
