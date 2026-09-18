@@ -106,8 +106,13 @@ class HrController extends ApiController
             DB::transaction(function () use ($worker, $data, $newPhoto, &$oldPhoto) {
                 $locked = Worker::whereKey($worker->id)->lockForUpdate()->firstOrFail();
                 $oldPhoto = $locked->photo_path;
-                $locked->user->update(['email' => $data['email'], 'name' => "{$data['first_name']} {$data['last_name']}"]);
-                $locked->update(array_merge(collect($data)->except('email')->all(), $newPhoto ? ['photo_path' => $newPhoto] : []));
+                $userData = ['email' => $data['email'], 'name' => "{$data['first_name']} {$data['last_name']}"];
+                if (isset($data['password']) && $data['password'] !== '') {
+                    $userData['password'] = $data['password'];
+                }
+                $locked->user->update($userData);
+                if (isset($userData['password'])) $locked->user->tokens()->delete();
+                $locked->update(array_merge(collect($data)->except(['email', 'password', 'password_confirmation'])->all(), $newPhoto ? ['photo_path' => $newPhoto] : []));
             });
         } catch (Throwable $exception) {
             $photos->delete($newPhoto);

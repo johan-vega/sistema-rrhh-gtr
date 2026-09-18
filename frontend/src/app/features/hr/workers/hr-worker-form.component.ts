@@ -129,6 +129,18 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
                 <small id="worker-password-help">Mínimo 6 caracteres. Puede contener solo números; se ingresa manualmente.</small>
               </div>
             </div>
+          } @else {
+            <div class="form-row">
+              <div class="form-group">
+                <label for="new-password">Nueva contraseña (opcional)</label>
+                <input id="new-password" type="password" [(ngModel)]="payload.password" name="password" minlength="6" autocomplete="new-password" aria-describedby="new-password-help" class="input-control" />
+                <small id="new-password-help">Déjala vacía para conservar la actual. Mínimo 6 caracteres; puede contener solo números. Al cambiarla se cerrarán las sesiones del trabajador.</small>
+              </div>
+              <div class="form-group">
+                <label for="password-confirmation">Confirmar nueva contraseña</label>
+                <input id="password-confirmation" type="password" [(ngModel)]="passwordConfirmation" name="password_confirmation" [required]="!!payload.password" autocomplete="new-password" class="input-control" />
+              </div>
+            </div>
           }
 
           <div class="form-actions">
@@ -225,6 +237,7 @@ export class HrWorkerFormComponent implements OnInit, OnDestroy {
   loading = false;
 
   error = '';
+  passwordConfirmation = '';
   hasPhoto = false;
   photoPreview: string | null = null;
   private originalArea?: number;
@@ -313,10 +326,14 @@ export class HrWorkerFormComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void { if (this.photoPreview) URL.revokeObjectURL(this.photoPreview); }
   onSubmit(form: NgForm): void {
     if (this.loading || !form.valid || !this.payload.area_id || !this.payload.position_id) return;
+    if (this.isEdit && this.payload.password && this.payload.password !== this.passwordConfirmation) {
+      this.error = 'La confirmación de la contraseña no coincide.';
+      return;
+    }
     this.loading = true;
     this.error = '';
     const save = this.isEdit && this.workerId
-      ? this.workerService.update(this.workerId, this.payload)
+      ? this.workerService.update(this.workerId, { ...this.payload, password_confirmation: this.passwordConfirmation })
       : this.workerService.create(this.payload);
     save.subscribe({
       next: res => {

@@ -5,12 +5,13 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HrWorkerService } from '../../../core/services/hr-worker.service';
 import { WorkerPhotoComponent } from '../../../shared/components/worker-photo.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { Worker } from '../../../core/models/index';
 
 @Component({
   selector: 'app-hr-workers-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, WorkerPhotoComponent],
+  imports: [CommonModule, RouterLink, FormsModule, WorkerPhotoComponent, ConfirmDialogComponent],
   template: `
     <div class="workers-container">
       <div class="header-bar">
@@ -32,6 +33,8 @@ import { Worker } from '../../../core/models/index';
           class="input-search" 
         />
       </div>
+      @if (deleteError()) { <p role="alert">{{ deleteError() }}</p> }
+      @if (deleteSuccess()) { <p role="status">{{ deleteSuccess() }}</p> }
 
       <p *ngIf="loading()" role="status">Cargando trabajadores…</p>
       <div *ngIf="error()" role="alert">
@@ -73,10 +76,12 @@ import { Worker } from '../../../core/models/index';
             <button 
               (click)="toggleStatus(worker)" 
               class="btn-toggle"
+              [disabled]="deleting()"
               [class.deactivate]="worker.active"
             >
               {{ worker.active ? 'Desactivar' : 'Activar' }}
             </button>
+            <button type="button" class="btn-toggle btn-delete" [disabled]="deleting()" (click)="confirmDelete(worker)">Eliminar</button>
             <a [routerLink]="['/hr/workers', worker.id]" class="btn-edit">Editar</a>
           </div>
         </div>
@@ -86,6 +91,11 @@ import { Worker } from '../../../core/models/index';
         <span>Página {{ page() }} de {{ lastPage() }}</span>
         <button class="btn-toggle next" [disabled]="loading() || page() >= lastPage()" (click)="loadWorkers(page() + 1)">Siguiente</button>
       </nav>
+      @if (pendingDeletion(); as worker) {
+        <app-confirm-dialog title="Eliminar trabajador definitivamente"
+          [message]="'¿Eliminar a ' + worker.full_name + ' (DNI: ' + worker.dni + ')? Se eliminarán su cuenta de acceso y fotografía. No se puede deshacer. Si tiene solicitudes, deberás usar Desactivar.'"
+          confirmLabel="Eliminar definitivamente" (confirmed)="deleteWorker()" (dismissed)="pendingDeletion.set(null)" />
+      }
     </div>
   `,
   styles: [`
@@ -187,8 +197,10 @@ import { Worker } from '../../../core/models/index';
     }
     .card-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 0.6rem;
     }
+    .btn-delete { color: #dc2626; border-color: #fca5a5; }
     .btn-toggle {
       flex: 1;
       padding: 0.5rem;
@@ -223,6 +235,10 @@ export class HrWorkersListComponent implements OnInit, OnDestroy {
   loading = signal(false);
   error = signal('');
   searchQuery = '';
+  pendingDeletion = signal<Worker | null>(null);
+  deleting = signal(false);
+  deleteError = signal('');
+  deleteSuccess = signal('');
 
   ngOnInit(): void {
     this.loadWorkers();
@@ -250,6 +266,8 @@ export class HrWorkersListComponent implements OnInit, OnDestroy {
         this.page.set(res.data.page);
         this.perPage.set(res.data.per_page);
         this.total.set(res.data.total);
+        // Volver a la última página si se eliminó su único registro.
+        if (res.data.page > this.lastPage()) this.loadWorkers(this.lastPage());
       },
       error: () => {
         this.loading.set(false);
@@ -260,6 +278,33 @@ export class HrWorkersListComponent implements OnInit, OnDestroy {
 
   getInitials(name: string, lastName: string): string {
     return `${name[0] || ''}${lastName[0] || ''}`.toUpperCase();
+  }
+
+  confirmDelete(worker: Worker): void {
+    if (this.deleting()) return;
+    this.deleteError.set('');
+    this.deleteSuccess.set('');
+    this.pendingDeletion.set(worker);
+  }
+
+  deleteWorker(): void {
+    const worker = this.pendingDeletion();
+    if (!worker || this.deleting()) return;
+    this.pendingDeletion.set(null);
+    this.deleting.set(true);
+    this.workerService.deleteWorker(worker.id).subscribe({
+      next: res => {
+        this.deleting.set(false);
+        if (!res.success) { this.deleteError.set(res.message); return; }
+        this.deleteSuccess.set(res.message);
+        this.loadWorkers(this.page());
+      },
+      error: err => {
+        this.deleting.set(false);
+        this.deleteError.set((Object.values(err?.error?.errors ?? {}).flat()[0] as string)
+          || err?.error?.message || 'No se pudo eliminar el trabajador. Actualiza la lista antes de reintentar.');
+      },
+    });
   }
 
   toggleStatus(worker: Worker): void {

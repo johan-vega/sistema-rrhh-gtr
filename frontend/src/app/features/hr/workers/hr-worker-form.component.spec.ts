@@ -45,6 +45,32 @@ describe('Formulario RRHH: fecha de ingreso', () => {
     return fixture;
   }
 
+  it('permite contraseña opcional al editar, conserva ceros y exige confirmación coincidente', async () => {
+    route.snapshot.params = { id: '7' };
+    service.getById.mockReturnValue(of(response(mapWorker(worker))));
+    const fixture = await render();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('#new-password');
+    const confirmation: HTMLInputElement = fixture.nativeElement.querySelector('#password-confirmation');
+    const form = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
+    expect(input.value).toBe('');
+    expect(input.required).toBe(false);
+    expect(form.valid).toBe(true);
+    input.value = '12345'; input.dispatchEvent(new Event('input'));
+    confirmation.value = '12345'; confirmation.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(form.valid).toBe(false);
+    input.value = '010190'; input.dispatchEvent(new Event('input'));
+    confirmation.value = '010191'; confirmation.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    fixture.componentInstance.onSubmit(form);
+    expect(service.update).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.error).toContain('no coincide');
+    confirmation.value = '010190'; confirmation.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    fixture.componentInstance.onSubmit(form);
+    expect(service.update).toHaveBeenCalledWith(7, expect.objectContaining({ password: '010190', password_confirmation: '010190' }));
+  });
+
   it('es opcional, empieza vacío y envía la fecha seleccionada al crear', async () => {
     const fixture = await render();
     const input: HTMLInputElement = fixture.nativeElement.querySelector('#hire-date');

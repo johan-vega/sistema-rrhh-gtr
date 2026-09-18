@@ -30,6 +30,50 @@ class WorkerDetailsTest extends TestCase {
     private function photo(): UploadedFile {
         return UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='));
     }
+    public function test_hr_can_reset_worker_password_with_six_digits_json_and_photo(): void {
+        $data = $this->payload();
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');
+        $user = Worker::findOrFail($id)->user;
+        $user->createToken('sesion-anterior');
+        $this->putJson("/api/hr/workers/$id", [...$data, 'password' => '010190', 'password_confirmation' => '010190'])
+            ->assertOk()->assertJsonMissingPath('data.password')->assertJsonMissingPath('data.password_confirmation');
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('010190', $user->fresh()->password));
+        $this->assertFalse(\Illuminate\Support\Facades\Hash::check($data['password'], $user->fresh()->password));
+        $this->assertSame(0, $user->tokens()->count());
+        $this->postJson('/api/login', ['email' => $data['email'], 'password' => '010190'])->assertOk();
+        $this->postJson('/api/login', ['email' => $data['email'], 'password' => $data['password']])->assertUnauthorized();
+        $this->post("/api/hr/workers/$id", [...$data, '_method' => 'PUT', 'password' => '020290',
+            'password_confirmation' => '020290', 'photo' => $this->photo()], ['Accept' => 'application/json'])->assertOk();
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('020290', $user->fresh()->password));
+        $this->assertSame(0, $user->tokens()->count());
+    }
+    public function test_omitted_or_empty_password_keeps_hash_and_tokens_on_edit(): void {
+        $data = $this->payload();
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');
+        $user = Worker::findOrFail($id)->user;
+        $hash = $user->password;
+        $user->createToken('conservar');
+        unset($data['password'], $data['password_confirmation']);
+        foreach ([$data, [...$data, 'password' => '', 'password_confirmation' => ''], [...$data, 'password' => null]] as $edit) {
+            $this->putJson("/api/hr/workers/$id", $edit)->assertOk();
+            $this->assertSame($hash, $user->fresh()->password);
+            $this->assertSame(1, $user->tokens()->count());
+        }
+    }
+    public function test_invalid_password_reset_is_rejected_and_worker_cannot_reset_via_hr(): void {
+        $data = $this->payload();
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');
+        $user = Worker::findOrFail($id)->user;
+        $hash = $user->password;
+        foreach ([['12345', '12345'], ['010190', '020290'], ['010190', null], [101990, 101990]] as [$password, $confirmation]) {
+            $this->putJson("/api/hr/workers/$id", [...$data, 'password' => $password, 'password_confirmation' => $confirmation])
+                ->assertUnprocessable()->assertJsonValidationErrors('password');
+        }
+        $this->assertSame($hash, $user->fresh()->password);
+        Sanctum::actingAs($user);
+        $this->putJson("/api/hr/workers/$id", [...$data, 'password' => '010190', 'password_confirmation' => '010190'])->assertForbidden();
+        $this->assertSame($hash, $user->fresh()->password);
+    }
     public function test_worker_list_paginates_all_39_records_and_searches_beyond_first_page(): void {
         $ids = [];
         for ($i = 1; $i <= 39; $i++) {
@@ -162,8 +206,29 @@ class WorkerDetailsTest extends TestCase {
         Sanctum::actingAs(Worker::findOrFail($id)->user);
         $this->get("/api/workers/$id/photo")->assertOk();
         $this->getJson("/api/workers/$other/photo")->assertForbidden();
-        $this->putJson('/api/profile', ['address' => 'Nueva casa', 'phone' => '900000001', 'dni_address' => 'NO', 'birth_date' => '2000-01-01', 'worker_type' => 'EMPLEADO', 'first_name' => 'NO', 'dni' => 'NO', 'area_id' => 999, 'position_id' => 999, 'emergency_phone' => 'NO'])
-            ->assertOk()->assertJsonPath('data.address', 'Nueva casa')->assertJsonPath('data.dni_address', $data['dni_address'])->assertJsonPath('data.birth_date', $data['birth_date'])->assertJsonPath('data.worker_type', 'OBRERO');
+        $this->putJson('/api/profile', ['address' => 'Nueva casa', 'phone' => '900000001', 'dni_address' => 'Nueva dirección DNI', 'birth_date' => '2000-01-01', 'worker_type' => 'EMPLEADO', 'first_name' => 'NO', 'dni' => 'NO', 'area_id' => 999, 'position_id' => 999, 'emergency_phone' => '900000002'])
+            ->assertOk()->assertJsonPath('data.address', 'Nueva casa')->assertJsonPath('data.dni_address', 'Nueva dirección DNI')
+            ->assertJsonPath('data.emergency_phone', '900000002')->assertJsonPath('data.birth_date', $data['birth_date'])->assertJsonPath('data.worker_type', 'OBRERO')
+            ->assertJsonPath('data.first_name', $data['first_name'])->assertJsonPath('data.dni', $data['dni'])
+            ->assertJsonPath('data.area.id', $data['area_id'])->assertJsonPath('data.position.id', $data['position_id']);
+        $this->getJson('/api/profile')->assertOk()->assertJsonPath('data.dni_address', 'Nueva dirección DNI')->assertJsonPath('data.emergency_phone', '900000002');
+        $this->assertSame($data['dni_address'], Worker::findOrFail($other)->dni_address);
+        $this->assertSame($data['emergency_phone'], Worker::findOrFail($other)->emergency_phone);
+    }
+    public function test_worker_contact_fields_validate_lengths_and_can_be_cleared(): void {
+        $data = $this->payload();
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');
+        Sanctum::actingAs(Worker::findOrFail($id)->user);
+        foreach ([['dni_address' => str_repeat('a', 256), 'emergency_phone' => str_repeat('1', 31)],
+            ['dni_address' => ['incorrecto'], 'emergency_phone' => ['incorrecto']]] as $invalid) {
+            $this->putJson('/api/profile', $invalid)->assertUnprocessable()->assertJsonValidationErrors(['dni_address', 'emergency_phone']);
+        }
+        $this->putJson('/api/profile', ['phone' => '900000001'])->assertOk()
+            ->assertJsonPath('data.dni_address', $data['dni_address'])->assertJsonPath('data.emergency_phone', $data['emergency_phone']);
+        $this->putJson('/api/profile', ['dni_address' => str_repeat('a', 255), 'emergency_phone' => str_repeat('1', 30)])->assertOk();
+        $this->putJson('/api/profile', ['dni_address' => '', 'emergency_phone' => null])->assertOk()
+            ->assertJsonPath('data.dni_address', null)->assertJsonPath('data.emergency_phone', null);
+        $this->getJson('/api/profile')->assertOk()->assertJsonPath('data.dni_address', null)->assertJsonPath('data.emergency_phone', null);
     }
     public function test_inactive_area_and_position_cannot_be_assigned_but_current_references_are_kept(): void {
         $data = $this->payload();
