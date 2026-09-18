@@ -50,9 +50,25 @@ class HrController extends ApiController
 
     public function workers(Request $request)
     {
-        $q = Worker::with(['user', 'area', 'position'])->when($request->query('active') !== null, fn ($q) => $q->where('active', filter_var($request->query('active'), FILTER_VALIDATE_BOOLEAN)))->when($request->query('search'), fn ($q, $s) => $q->where(fn ($w) => $w->where('dni', 'like', "%$s%")->orWhere('first_name', 'like', "%$s%")->orWhere('last_name', 'like', "%$s%")));
+        $request->validate(['page' => ['sometimes', 'integer', 'min:1'], 'search' => ['nullable', 'string', 'max:255']]);
+        $q = Worker::with(['user', 'area', 'position'])
+            ->when($request->query('active') !== null, fn ($q) => $q->where('active', filter_var($request->query('active'), FILTER_VALIDATE_BOOLEAN)));
+        // Buscar en toda la colección, incluidos nombres completos y áreas.
+        foreach (preg_split('/\s+/u', trim((string) $request->query('search', '')), -1, PREG_SPLIT_NO_EMPTY) as $term) {
+            $q->where(fn ($w) => $w->where('dni', 'like', "%$term%")
+                ->orWhere('first_name', 'like', "%$term%")
+                ->orWhere('last_name', 'like', "%$term%")
+                ->orWhereHas('area', fn ($area) => $area->where('name', 'like', "%$term%")));
+        }
 
-        return $this->success(WorkerResource::collection($q->orderBy('last_name')->paginate(20)));
+        $page = $q->orderBy('last_name')->orderBy('id')->paginate(20);
+        // Mantener data como lista para los consumidores existentes.
+        return response()->json([
+            'success' => true,
+            'message' => 'Operación realizada correctamente',
+            'data' => WorkerResource::collection($page->getCollection())->resolve($request),
+            'meta' => ['total' => $page->total(), 'page' => $page->currentPage(), 'per_page' => $page->perPage()],
+        ]);
     }
 
     public function storeWorker(StoreWorkerRequest $request, WorkerPhotoService $photos)

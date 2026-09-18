@@ -30,6 +30,38 @@ class WorkerDetailsTest extends TestCase {
     private function photo(): UploadedFile {
         return UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='));
     }
+    public function test_worker_list_paginates_all_39_records_and_searches_beyond_first_page(): void {
+        $ids = [];
+        for ($i = 1; $i <= 39; $i++) {
+            $data = $this->payload();
+            $worker = Worker::create([...$data, 'user_id' => User::factory()->create()->id,
+                'first_name' => $i === 39 ? 'Zulma' : 'Ana', 'last_name' => 'Pérez', 'active' => true]);
+            $ids[] = $worker->id;
+        }
+        $first = $this->getJson('/api/hr/workers')->assertOk()->assertJsonCount(20, 'data')
+            ->assertJsonPath('meta.total', 39)->assertJsonPath('meta.page', 1)->assertJsonPath('meta.per_page', 20)->json('data');
+        $second = $this->getJson('/api/hr/workers?page=2')->assertOk()->assertJsonCount(19, 'data')
+            ->assertJsonPath('meta.total', 39)->assertJsonPath('meta.page', 2)->json('data');
+        $this->assertSame($ids, array_column([...$first, ...$second], 'id'));
+        foreach (['Zulma Pérez', Worker::findOrFail($ids[38])->dni] as $search) {
+            $this->getJson('/api/hr/workers?'.http_build_query(['search' => $search]))->assertOk()
+                ->assertJsonCount(1, 'data')->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $ids[38]);
+        }
+        $this->getJson('/api/hr/workers?'.http_build_query(['search' => 'Producción', 'page' => 2]))
+            ->assertOk()->assertJsonCount(19, 'data')->assertJsonPath('meta.total', 39);
+        $this->getJson('/api/hr/workers?search=NoExiste')->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('meta.total', 0);
+    }
+    public function test_worker_search_keeps_active_filter_and_validates_pagination(): void {
+        $data = $this->payload();
+        Worker::create([...$data, 'user_id' => User::factory()->create()->id, 'active' => false]);
+        $this->getJson('/api/hr/workers?'.http_build_query(['search' => 'Producción', 'active' => 'true']))
+            ->assertOk()->assertJsonPath('meta.total', 0);
+        $this->getJson('/api/hr/workers?'.http_build_query(['search' => 'Producción', 'active' => 'false']))
+            ->assertOk()->assertJsonPath('meta.total', 1);
+        foreach (['0', '-1', 'abc'] as $page) {
+            $this->getJson('/api/hr/workers?page='.$page)->assertUnprocessable()->assertJsonValidationErrors('page');
+        }
+    }
     public function test_hr_can_create_and_edit_hire_date_with_or_without_photo(): void {
         $data = [...$this->payload(), 'hire_date' => '2020-02-29'];
         $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->assertJsonPath('data.hire_date', '2020-02-29')->json('data.id');
