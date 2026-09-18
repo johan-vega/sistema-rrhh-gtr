@@ -57,7 +57,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
                 <span class="detail-value">{{ user()!.position?.name ?? '—' }}</span>
               </div>
               <div class="detail-row"><span class="detail-label">Fecha de nacimiento</span><span class="detail-value">{{ (user()!.birth_date | date:'dd/MM/yyyy') || '—' }}</span></div>
-              <div class="detail-row"><span class="detail-label">Tipo de trabajador</span><span class="detail-value">{{ user()!.worker_type || '—' }}</span></div>
+              <!-- <div class="detail-row"><span class="detail-label">Tipo de trabajador</span><span class="detail-value">{{ user()!.worker_type || '—' }}</span></div> -->
               <div class="detail-row"><span class="detail-label">Correo</span><span class="detail-value">{{ user()!.email }}</span></div>
             </div>
             <div class="readonly-notice">
@@ -120,17 +120,17 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
 })
 export class WorkerProfileComponent implements OnInit {
   private svc = inject(ProfileService);
-  private fb  = inject(FormBuilder);
+  private fb = inject(FormBuilder);
 
   loading = signal(true);
-  saving  = signal(false);
-  saved   = signal(false);
-  error   = signal('');
-  user    = signal<User | null>(null);
+  saving = signal(false);
+  saved = signal(false);
+  error = signal('');
+  user = signal<User | null>(null);
 
   form = this.fb.group({
     address: [''],
-    phone:   [''],
+    phone: [''],
     dni_address: ['', Validators.maxLength(255)],
     emergency_phone: ['', Validators.maxLength(30)],
   });
@@ -139,8 +139,10 @@ export class WorkerProfileComponent implements OnInit {
     this.svc.get().subscribe({
       next: res => {
         this.user.set(res.data);
-        this.form.patchValue({ address: res.data.address ?? '', phone: res.data.phone ?? '',
-          dni_address: res.data.dni_address ?? '', emergency_phone: res.data.emergency_phone ?? '' });
+        this.form.patchValue({
+          address: res.data.address ?? '', phone: res.data.phone ?? '',
+          dni_address: res.data.dni_address ?? '', emergency_phone: res.data.emergency_phone ?? ''
+        });
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
