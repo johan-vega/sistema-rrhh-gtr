@@ -30,6 +30,42 @@ class WorkerDetailsTest extends TestCase {
     private function photo(): UploadedFile {
         return UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='));
     }
+    public function test_hr_can_create_and_edit_hire_date_with_or_without_photo(): void {
+        $data = [...$this->payload(), 'hire_date' => '2020-02-29'];
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->assertJsonPath('data.hire_date', '2020-02-29')->json('data.id');
+        $this->assertSame('2020-02-29', Worker::findOrFail($id)->hire_date->toDateString());
+        $this->getJson("/api/hr/workers/$id")->assertOk()->assertJsonPath('data.hire_date', '2020-02-29');
+        $this->post("/api/hr/workers/$id", [...$data, '_method' => 'PUT', 'hire_date' => '2021-07-15', 'photo' => $this->photo()], ['Accept' => 'application/json'])
+            ->assertOk()->assertJsonPath('data.hire_date', '2021-07-15')->assertJsonPath('data.has_photo', true);
+        $this->assertSame('2021-07-15', Worker::findOrFail($id)->hire_date->toDateString());
+        $this->post('/api/hr/workers', [...$this->payload(), 'hire_date' => '2022-08-01', 'photo' => $this->photo()], ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonPath('data.hire_date', '2022-08-01');
+    }
+    public function test_worker_without_hire_date_can_be_completed_later_and_omission_does_not_erase_it(): void {
+        $data = $this->payload();
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->assertJsonPath('data.hire_date', null)->json('data.id');
+        $this->getJson("/api/hr/workers/$id")->assertOk()->assertJsonPath('data.hire_date', null);
+        $this->putJson("/api/hr/workers/$id", [...$data, 'hire_date' => '2018-03-04'])->assertOk()->assertJsonPath('data.hire_date', '2018-03-04');
+        $this->putJson("/api/hr/workers/$id", $data)->assertOk()->assertJsonPath('data.hire_date', '2018-03-04');
+        $this->putJson("/api/hr/workers/$id", [...$data, 'hire_date' => ''])->assertOk()->assertJsonPath('data.hire_date', null);
+        $this->assertNull(Worker::findOrFail($id)->hire_date);
+    }
+    public function test_invalid_hire_dates_are_rejected_on_create_and_update(): void {
+        $data = $this->payload();
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');
+        foreach (['no-es-fecha', '2025-02-29', '2026-13-01', '01/09/2026'] as $date) {
+            $this->postJson('/api/hr/workers', [...$this->payload(), 'hire_date' => $date])->assertUnprocessable()->assertJsonValidationErrors('hire_date');
+            $this->putJson("/api/hr/workers/$id", [...$data, 'hire_date' => $date])->assertUnprocessable()->assertJsonValidationErrors('hire_date');
+        }
+        $this->assertNull(Worker::findOrFail($id)->hire_date);
+    }
+    public function test_worker_cannot_change_hire_date_from_own_profile(): void {
+        $data = [...$this->payload(), 'hire_date' => '2020-01-02'];
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');
+        Sanctum::actingAs(Worker::findOrFail($id)->user);
+        $this->putJson('/api/profile', ['hire_date' => '2000-01-01', 'phone' => '900000001'])->assertOk();
+        $this->assertSame('2020-01-02', Worker::findOrFail($id)->hire_date->toDateString());
+    }
     public function test_hr_can_create_worker_with_six_digit_password_preserving_leading_zero(): void {
         $data = [...$this->payload(), 'password' => '010190', 'password_confirmation' => '010190'];
         $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');

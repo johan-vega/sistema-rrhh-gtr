@@ -8,6 +8,7 @@ export interface WorkerPersonalDetails {
   emergency_phone?: string | null;
   worker_type?: WorkerType | null;
   birth_date?: string | null;
+  hire_date?: string | null;
   has_photo?: boolean;
 }
 

@@ -53,6 +53,7 @@ export function mapWorker(worker: any): Worker {
     emergency_phone: worker.emergency_phone ?? null,
     worker_type: worker.worker_type ?? null,
     birth_date: worker.birth_date ?? null,
+    hire_date: worker.hire_date ?? null,
     has_photo: Boolean(worker.has_photo),
     monthly_permission_limit: worker.monthly_permission_limit ?? null,
     monthly_absence_limit: worker.monthly_absence_limit ?? null,

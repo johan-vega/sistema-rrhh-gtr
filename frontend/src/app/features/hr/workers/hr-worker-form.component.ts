@@ -65,6 +65,13 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label for="hire-date">Fecha de ingreso a la empresa</label>
+              <input id="hire-date" type="date" [(ngModel)]="payload.hire_date" name="hire_date" aria-describedby="hire-date-help" class="input-control" />
+              <small id="hire-date-help">Opcional. Puedes completarla o corregirla al editar al trabajador.</small>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>Área *</label>
               <select [(ngModel)]="payload.area_id" name="area_id" required class="input-control">
                 <option [ngValue]="0" disabled>Selecciona un área</option>
@@ -238,6 +245,7 @@ export class HrWorkerFormComponent implements OnInit, OnDestroy {
     position_id: 0,
     worker_type: null,
     birth_date: '',
+    hire_date: '',
     phone: '',
     address: ''
   };
@@ -279,6 +287,7 @@ export class HrWorkerFormComponent implements OnInit, OnDestroy {
           emergency_phone: w.emergency_phone ?? '',
           worker_type: w.worker_type ?? null,
           birth_date: w.birth_date ?? '',
+          hire_date: w.hire_date ?? '',
           monthly_permission_limit: w.monthly_permission_limit ?? null,
           monthly_absence_limit: w.monthly_absence_limit ?? null,
         };
