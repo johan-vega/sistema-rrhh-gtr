@@ -15,6 +15,12 @@ class UpdateWorkerRequest extends ApiRequest
             'emergency_phone' => ['nullable', 'string', 'max:30'],
             'worker_type' => ['required', 'in:OBRERO,EMPLEADO'],
             'birth_date' => ['required', 'date_format:Y-m-d', 'before:today'],
+            'hire_date' => ['nullable', 'date_format:Y-m-d'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], 'monthly_permission_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'monthly_absence_limit' => ['nullable', 'integer', 'min:0', 'max:365']];
+    }
+
+    public function messages(): array
+    {
+        return ['hire_date.date_format' => 'La fecha de ingreso debe ser una fecha válida con formato AAAA-MM-DD.'];
     }
 }
