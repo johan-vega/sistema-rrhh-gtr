@@ -31,4 +31,4 @@ RUN chmod +x /usr/local/bin/docker-entrypoint \
 USER www-data
 
 ENTRYPOINT ["docker-entrypoint"]
-CMD ["sh", "-c", "php -d upload_max_filesize=12M -d post_max_size=14M -d max_file_uploads=5 artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "php -d upload_max_filesize=20M -d post_max_size=24M -d max_file_uploads=5 artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]

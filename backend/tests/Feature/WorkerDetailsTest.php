@@ -185,7 +185,7 @@ class WorkerDetailsTest extends TestCase {
         foreach ([today()->toDateString(), today()->addDay()->toDateString(), ''] as $date) {
             $this->postJson('/api/hr/workers', [...$data, 'birth_date' => $date])->assertUnprocessable()->assertJsonValidationErrors('birth_date');
         }
-        foreach ([UploadedFile::fake()->create('foto.jpg', 5121, 'image/jpeg'), UploadedFile::fake()->create('archivo.pdf', 10, 'application/pdf')] as $photo) {
+        foreach ([$this->photo()->size(20481), UploadedFile::fake()->create('archivo.pdf', 10, 'application/pdf')] as $photo) {
             $this->post('/api/hr/workers', [...$data, 'photo' => $photo], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('photo');
         }
         $this->assertDatabaseCount('workers', 0);
@@ -198,6 +198,21 @@ class WorkerDetailsTest extends TestCase {
         $this->putJson("/api/hr/workers/{$worker->id}", [...$data, 'worker_type' => null, 'birth_date' => null])
             ->assertUnprocessable()->assertJsonValidationErrors(['birth_date', 'worker_type']);
         $this->putJson("/api/hr/workers/{$worker->id}", $data)->assertOk();
+    }
+    public function test_worker_photo_accepts_20_mb_and_rejects_larger_on_create_and_edit(): void {
+        $data = $this->payload();
+        $id = $this->post('/api/hr/workers', [...$data, 'photo' => $this->photo()->size(20480)], ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonPath('data.has_photo', true)->json('data.id');
+        $this->post("/api/hr/workers/$id", [...$data, '_method' => 'PUT', 'photo' => $this->photo()->size(20480)], ['Accept' => 'application/json'])
+            ->assertOk()->assertJsonPath('data.has_photo', true);
+        $path = Worker::findOrFail($id)->photo_path;
+        $this->post('/api/hr/workers', [...$this->payload(), 'photo' => $this->photo()->size(20481)], ['Accept' => 'application/json'])
+            ->assertUnprocessable()->assertJsonPath('errors.photo.0', 'La fotografía no debe superar los 20 MB.');
+        $this->post("/api/hr/workers/$id", [...$data, '_method' => 'PUT', 'photo' => $this->photo()->size(20481)], ['Accept' => 'application/json'])
+            ->assertUnprocessable()->assertJsonPath('errors.photo.0', 'La fotografía no debe superar los 20 MB.');
+        $this->assertSame($path, Worker::findOrFail($id)->photo_path);
+        Storage::disk('s3')->assertExists($path);
+        $this->assertDatabaseCount('workers', 1);
     }
     public function test_worker_only_views_own_photo_and_cannot_edit_hr_only_fields(): void {
         $data = $this->payload();

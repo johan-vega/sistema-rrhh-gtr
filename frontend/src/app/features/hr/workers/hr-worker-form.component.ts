@@ -21,7 +21,7 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
         <form (ngSubmit)="onSubmit(form)" #form="ngForm">
           <div class="form-row">
             <div class="form-group">
-              <label for="worker-photo">Foto (JPG, PNG o WEBP, máximo 5 MB)</label>
+              <label for="worker-photo">Foto (JPG, PNG o WEBP, máximo 20 MB)</label>
               <div class="photo-preview"><app-worker-photo [workerId]="workerId" [hasPhoto]="hasPhoto" [preview]="photoPreview" [initials]="payload.name.charAt(0)" /></div>
               <input id="worker-photo" type="file" accept=".jpg,.jpeg,.png,.webp" (change)="selectPhoto($event)" [disabled]="loading" />
             </div>
@@ -313,8 +313,8 @@ export class HrWorkerFormComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file || this.loading) return;
-    if (!/\.(jpe?g|png|webp)$/i.test(file.name) || !file.size || file.size > 5 * 1024 * 1024) {
-      this.error = 'Selecciona una imagen JPG, PNG o WEBP de hasta 5 MB.';
+    if (!/\.(jpe?g|png|webp)$/i.test(file.name) || !file.size || file.size > 20 * 1024 * 1024) {
+      this.error = 'Selecciona una imagen JPG, PNG o WEBP de hasta 20 MB.';
       input.value = '';
       return;
     }
