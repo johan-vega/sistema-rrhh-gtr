@@ -71,6 +71,37 @@ describe('Formulario RRHH: fecha de ingreso', () => {
     expect(service.update).toHaveBeenCalledWith(7, expect.objectContaining({ password: '010190', password_confirmation: '010190' }));
   });
 
+  it.each([false, true])('acepta fotos hasta 20 MB y rechaza mayores (edición: %s)', async editing => {
+    if (editing) {
+      route.snapshot.params = { id: '7' };
+      service.getById.mockReturnValue(of(response(mapWorker(worker))));
+    }
+    const fixture = await render();
+    vi.stubGlobal('URL', class extends URL {
+      static override createObjectURL = vi.fn(() => 'blob:foto-prueba');
+      static override revokeObjectURL = vi.fn();
+    });
+    try {
+      const photo = new File(['foto'], 'foto.png', { type: 'image/png' });
+      Object.defineProperty(photo, 'size', { value: 20 * 1024 * 1024 });
+      const input = { files: [photo], value: 'foto.png' };
+      fixture.componentInstance.selectPhoto({ target: input } as unknown as Event);
+      expect(fixture.componentInstance.payload.photo).toBe(photo);
+      expect(fixture.componentInstance.error).toBe('');
+      expect(fixture.componentInstance.photoPreview).toBe('blob:foto-prueba');
+      const oversized = new File(['foto'], 'grande.png', { type: 'image/png' });
+      Object.defineProperty(oversized, 'size', { value: 20 * 1024 * 1024 + 1 });
+      input.files = [oversized];
+      fixture.componentInstance.selectPhoto({ target: input } as unknown as Event);
+      expect(fixture.componentInstance.error).toContain('20 MB');
+      expect(input.value).toBe('');
+      expect(fixture.componentInstance.payload.photo).toBe(photo);
+    } finally {
+      fixture.destroy();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('es opcional, empieza vacío y envía la fecha seleccionada al crear', async () => {
     const fixture = await render();
     const input: HTMLInputElement = fixture.nativeElement.querySelector('#hire-date');
