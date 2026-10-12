@@ -25,13 +25,13 @@ import { RequestCategory } from '../../../core/models/index';
 
           <div class="form-group">
             <label>Días Mínimos de Anticipación *</label>
-            <input type="number" [(ngModel)]="category.minimum_advance_days" min="0" class="input-control" />
+            <input id="minimum-advance-days" type="number" [(ngModel)]="category.minimum_advance_days" [disabled]="!!category.unrestricted_dates" min="0" class="input-control" />
           </div>
 
           @if (category.is_absence) {
             <div class="form-group">
               <label>Máximo de Días para Justificar una Falta</label>
-              <input type="number" [(ngModel)]="category.maximum_past_days" min="0" max="365" class="input-control" />
+              <input type="number" [(ngModel)]="category.maximum_past_days" [disabled]="!!category.unrestricted_dates" min="0" max="365" class="input-control" />
             </div>
           }
 
@@ -41,6 +41,11 @@ import { RequestCategory } from '../../../core/models/index';
           </div>
 
           <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input id="unrestricted-dates" type="checkbox" [(ngModel)]="category.unrestricted_dates" />
+              Sin días de anticipación
+            </label>
+            <small>Permite fechas pasadas, de hoy o futuras, sin límite de antigüedad. Al desmarcar se recuperan los días configurados.</small>
             <label class="checkbox-label">
               <input type="checkbox" [(ngModel)]="category.requires_document" />
               ¿Requiere Adjuntar Documento Obligatorio?
@@ -73,12 +78,12 @@ import { RequestCategory } from '../../../core/models/index';
 
           <div class="cat-rules">
             <span class="rule-pill">
-              Mín. {{ cat.minimum_advance_days }} días de anticipación
+              {{ cat.unrestricted_dates ? 'Sin días de anticipación (fechas pasadas o futuras)' : 'Mín. ' + cat.minimum_advance_days + ' días de anticipación' }}
             </span>
             <span class="rule-pill" [class.req]="cat.requires_document">
               {{ cat.requires_document ? 'Documento Obligatorio' : 'Documento Opcional' }}
             </span>
-            @if (cat.is_absence) {
+            @if (cat.is_absence && !cat.unrestricted_dates) {
               <span class="rule-pill">Hasta {{ cat.maximum_past_days ?? 0 }} día(s) para justificar una falta pasada</span>
             }
           </div>
@@ -146,6 +151,7 @@ import { RequestCategory } from '../../../core/models/index';
       font-size: 0.88rem;
       outline: none;
       &:focus { border-color: var(--color-accent); }
+      &:disabled { background: #f1f5f9; opacity: 0.65; cursor: not-allowed; }
     }
     .form-actions {
       display: flex;
@@ -257,6 +263,7 @@ export class HrCategoriesComponent implements OnInit {
     requires_document: false,
     is_absence: false,
     minimum_advance_days: 0,
+    unrestricted_dates: false,
     maximum_past_days: 7,
   };
 
@@ -293,6 +300,7 @@ export class HrCategoriesComponent implements OnInit {
       requires_document: false,
       is_absence: false,
       minimum_advance_days: 0,
+      unrestricted_dates: false,
       maximum_past_days: 7,
     };
   }

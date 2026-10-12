@@ -25,12 +25,12 @@ class LaborRequestService
             throw ValidationException::withMessages(['category_id' => ['La categoría no existe o está inactiva.']]);
         }
         $start = Carbon::parse($data['start_date'])->startOfDay();
-        if ($category->is_absence) {
+        if (! $category->unrestricted_dates && $category->is_absence) {
             $maximumPastDays = $category->maximum_past_days ?? 0;
             if ($start->lt(today()->subDays($maximumPastDays))) {
                 throw ValidationException::withMessages(['start_date' => ["La justificación puede registrarse hasta {$maximumPastDays} día(s) después de la falta."]]);
             }
-        } elseif ($start->lt(today()->addDays($category->minimum_notice_days))) {
+        } elseif (! $category->unrestricted_dates && ! $category->is_absence && $start->lt(today()->addDays($category->minimum_notice_days))) {
             throw ValidationException::withMessages(['start_date' => ["La categoría exige {$category->minimum_notice_days} día(s) de anticipación."]]);
         }
         if ($category->requires_document && count($files) === 0) {

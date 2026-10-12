@@ -50,7 +50,7 @@ export class WorkerRequestNewComponent implements OnInit {
   checkAdvanceDays(): void {
     const cat = this.selectedCategory();
     const startStr = this.form.get('start_date')!.value;
-    if (!cat || !startStr) { this.dateWarning.set(''); return; }
+    if (!cat || !startStr || cat.unrestricted_dates) { this.dateWarning.set(''); return; }
 
     const start = new Date(startStr + 'T00:00:00');
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -160,6 +160,7 @@ export class WorkerRequestNewComponent implements OnInit {
 
   get minimumSelectableDate(): string {
     const category = this.selectedCategory();
+    if (category?.unrestricted_dates) return '';
     if (!category?.is_absence) return this.today;
     const date = new Date();
     date.setDate(date.getDate() - (category.maximum_past_days ?? 0));
