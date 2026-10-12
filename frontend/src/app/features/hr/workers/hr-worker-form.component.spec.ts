@@ -71,6 +71,47 @@ describe('Formulario RRHH: fecha de ingreso', () => {
     expect(service.update).toHaveBeenCalledWith(7, expect.objectContaining({ password: '010190', password_confirmation: '010190' }));
   });
 
+  it('muestra y oculta cada contraseña sin cambiar su valor ni enviar el formulario', async () => {
+    route.snapshot.params = { id: '7' };
+    service.getById.mockReturnValue(of(response(mapWorker(worker))));
+    const fixture = await render();
+    const element: HTMLElement = fixture.nativeElement;
+    const password = element.querySelector<HTMLInputElement>('#new-password')!;
+    const confirmation = element.querySelector<HTMLInputElement>('#password-confirmation')!;
+    const toggle = element.querySelector<HTMLButtonElement>('[aria-controls="new-password"]')!;
+    const confirmToggle = element.querySelector<HTMLButtonElement>('[aria-controls="password-confirmation"]')!;
+    expect(password.type).toBe('password');
+    expect(confirmation.type).toBe('password');
+    expect(toggle.type).toBe('button');
+    expect(confirmToggle.type).toBe('button');
+    password.value = '010190'; password.dispatchEvent(new Event('input'));
+    confirmation.value = '010190'; confirmation.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    toggle.click();
+    await fixture.whenStable();
+    expect(password.type).toBe('text');
+    expect(password.value).toBe('010190');
+    expect(toggle.textContent).toBe('Ocultar');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(confirmation.type).toBe('password');
+    // Seguir escribiendo con la contraseña visible conserva la vinculación al formulario.
+    password.value = '020290'; password.dispatchEvent(new Event('input'));
+    confirmToggle.click();
+    await fixture.whenStable();
+    expect(confirmation.type).toBe('text');
+    confirmation.value = '020290'; confirmation.dispatchEvent(new Event('input'));
+    toggle.click(); confirmToggle.click();
+    await fixture.whenStable();
+    expect(password.type).toBe('password');
+    expect(confirmation.type).toBe('password');
+    expect(toggle.textContent).toBe('Mostrar');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(service.update).not.toHaveBeenCalled();
+    expect(service.create).not.toHaveBeenCalled();
+    element.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+    expect(service.update).toHaveBeenCalledWith(7, expect.objectContaining({ password: '020290', password_confirmation: '020290' }));
+  });
+
   it.each([false, true])('acepta fotos hasta 20 MB y rechaza mayores (edición: %s)', async editing => {
     if (editing) {
       route.snapshot.params = { id: '7' };
