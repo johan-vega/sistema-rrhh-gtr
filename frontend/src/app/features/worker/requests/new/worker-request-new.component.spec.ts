@@ -45,6 +45,49 @@ describe('Nueva solicitud: selección y envío del documento', () => {
     fixture.detectChanges();
   }
 
+  it.each([false, true])('sin anticipación elimina el mínimo y los avisos para fechas pasadas o futuras (falta: %s)', absence => {
+    const category = { ...component.categories()[0], unrestricted_dates: true, is_absence: absence, minimum_advance_days: 30 };
+    component.categories.set([category]);
+    component.form.controls.category_id.setValue(category.id);
+    for (const date of ['2020-01-01', '2090-01-01']) {
+      component.form.patchValue({ start_date: date, end_date: date });
+      fixture.detectChanges();
+      expect(component.minimumSelectableDate).toBe('');
+      expect(fixture.nativeElement.querySelector('#start_date').min).toBe('');
+      expect(component.dateWarning()).toBe('');
+      expect(fixture.nativeElement.textContent).toContain('Sin días de anticipación');
+      expect(fixture.nativeElement.textContent).not.toContain('Anticipación requerida:');
+      expect(fixture.nativeElement.textContent).not.toContain('Justificación retroactiva:');
+    }
+    attach();
+    component.onSubmit();
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ category_id: category.id, start_date: '2090-01-01', document: component.selectedFile() }));
+    component.loading.set(false);
+    component.categories.set([{ ...category, unrestricted_dates: false }]);
+    component.form.controls.category_id.setValue(category.id);
+    component.form.patchValue({ start_date: '2020-01-01', end_date: '2020-01-01' });
+    fixture.detectChanges();
+    expect(component.minimumSelectableDate).not.toBe('');
+    expect(component.dateWarning()).not.toBe('');
+  });
+
+  it('sin anticipación no omite cupo de área ni documento obligatorio', () => {
+    const category = { ...component.categories()[0], unrestricted_dates: true, is_absence: false };
+    component.categories.set([category]);
+    component.form.controls.category_id.setValue(category.id);
+    fixture.detectChanges();
+    component.onSubmit();
+    expect(create).not.toHaveBeenCalled();
+    expect(component.error()).toContain('requiere adjuntar');
+    attach();
+    availability.mockReturnValue(of('2026-09-14'));
+    component.startCtrl.updateValueAndValidity();
+    fixture.detectChanges();
+    component.onSubmit();
+    expect(create).not.toHaveBeenCalled();
+    expect(component.startCtrl.hasError('areaAvailability')).toBe(true);
+  });
+
   it('rechaza visualmente una fecha bloqueada sin llamar al envío multipart', () => {
     availability.mockReturnValue(of('2026-09-14'));
     normalCategory();

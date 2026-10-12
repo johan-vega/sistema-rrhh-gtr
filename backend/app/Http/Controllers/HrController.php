@@ -194,6 +194,7 @@ class HrController extends ApiController
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:150', 'unique:request_categories,name'], 'description' => ['nullable', 'string', 'max:1000'], 'requires_document' => ['required', 'boolean'], 'minimum_notice_days' => ['required', 'integer', 'min:0', 'max:365'], 'maximum_past_days' => ['nullable', 'integer', 'min:0', 'max:365'], 'allow_approved_cancellation' => ['sometimes', 'boolean'], 'is_absence' => ['sometimes', 'boolean'], 'active' => ['sometimes', 'boolean']]);
 
+        $data += $request->validate(['unrestricted_dates' => ['sometimes', 'boolean']]);
         return $this->success(new CategoryResource(RequestCategory::create($data)), 'Categoría creada correctamente', 201);
     }
 
@@ -205,6 +206,7 @@ class HrController extends ApiController
     public function updateCategory(ManageResourceRequest $request, RequestCategory $category)
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:150', "unique:request_categories,name,{$category->id}"], 'description' => ['nullable', 'string', 'max:1000'], 'requires_document' => ['required', 'boolean'], 'minimum_notice_days' => ['required', 'integer', 'min:0', 'max:365'], 'maximum_past_days' => ['nullable', 'integer', 'min:0', 'max:365'], 'allow_approved_cancellation' => ['sometimes', 'boolean'], 'is_absence' => ['sometimes', 'boolean']]);
+        $data += $request->validate(['unrestricted_dates' => ['sometimes', 'boolean']]);
         $category->update($data);
 
         return $this->success(new CategoryResource($category), 'Categoría actualizada correctamente');

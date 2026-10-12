@@ -44,10 +44,13 @@
           <line x1="12" y1="8" x2="12.01" y2="8" />
         </svg></span>
       <div>
-        @if (cat.minimum_advance_days > 0) {
+        @if (cat.unrestricted_dates) {
+        <p><strong>Sin días de anticipación:</strong> puedes elegir fechas pasadas, de hoy o futuras, sin límite de antigüedad.</p>
+        }
+        @if (!cat.unrestricted_dates && cat.minimum_advance_days > 0) {
         <p><strong>Anticipación requerida:</strong> {{ cat.minimum_advance_days }} día(s)</p>
         }
-        @if (cat.is_absence) {
+        @if (cat.is_absence && !cat.unrestricted_dates) {
         <p><strong>Justificación retroactiva:</strong> hasta {{ cat.maximum_past_days ?? 0 }} día(s) después de la falta
         </p>
         }

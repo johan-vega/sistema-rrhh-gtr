@@ -79,6 +79,72 @@ class LaborRequestApiTest extends TestCase
         $this->assertDatabaseHas('labor_requests', ['worker_id' => $user->worker->id, 'status' => 'PENDIENTE']);
     }
 
+    public function test_hr_can_enable_and_disable_unrestricted_dates_without_losing_previous_limits(): void
+    {
+        [$hr] = $this->roles();
+        Sanctum::actingAs(User::factory()->create(['role_id' => $hr->id]));
+        $data = ['name' => 'Permiso configurable', 'requires_document' => false, 'minimum_notice_days' => 15, 'maximum_past_days' => 7];
+        $id = $this->postJson('/api/hr/categories', $data)->assertCreated()->assertJsonPath('data.unrestricted_dates', false)->json('data.id');
+        $this->putJson("/api/hr/categories/$id", [...$data, 'unrestricted_dates' => true])->assertOk()
+            ->assertJsonPath('data.unrestricted_dates', true)->assertJsonPath('data.minimum_notice_days', 15)->assertJsonPath('data.maximum_past_days', 7);
+        $this->getJson("/api/categories/$id")->assertOk()->assertJsonPath('data.unrestricted_dates', true);
+        $this->getJson('/api/hr/categories')->assertOk()->assertJsonPath('data.0.unrestricted_dates', true);
+        $this->putJson("/api/hr/categories/$id", $data)->assertOk()->assertJsonPath('data.unrestricted_dates', true);
+        $this->putJson("/api/hr/categories/$id", [...$data, 'unrestricted_dates' => false])->assertOk()->assertJsonPath('data.unrestricted_dates', false);
+        $this->postJson('/api/hr/categories', [...$data, 'name' => 'Libre desde creación', 'unrestricted_dates' => true])
+            ->assertCreated()->assertJsonPath('data.unrestricted_dates', true);
+        $this->putJson("/api/hr/categories/$id", [...$data, 'unrestricted_dates' => 'incorrecto'])->assertUnprocessable()->assertJsonValidationErrors('unrestricted_dates');
+    }
+
+    public function test_unrestricted_categories_allow_past_today_and_future_including_absences(): void
+    {
+        Sanctum::actingAs($this->worker());
+        foreach ([false, true] as $absence) {
+            $category = $this->category(['unrestricted_dates' => true, 'minimum_notice_days' => 30, 'is_absence' => $absence, 'maximum_past_days' => 7]);
+            foreach ([today()->subYears(2), today(), today()->addYears(2)] as $date) {
+                $this->postJson('/api/requests', $this->payload($category, ['start_date' => $date->toDateString(), 'end_date' => $date->toDateString()]))->assertCreated();
+            }
+            // La opción no elimina la coherencia del rango ni la obligatoriedad documental.
+            $this->postJson('/api/requests', $this->payload($category, ['start_date' => today()->toDateString(), 'end_date' => today()->subDay()->toDateString()]))
+                ->assertUnprocessable()->assertJsonValidationErrors('end_date');
+            $category->update(['requires_document' => true]);
+            $this->postJson('/api/requests', $this->payload($category))->assertUnprocessable()->assertJsonValidationErrors('documents');
+        }
+    }
+
+    public function test_disabling_unrestricted_dates_restores_rules_and_worker_cannot_override_them(): void
+    {
+        Sanctum::actingAs($this->worker());
+        foreach ([false, true] as $absence) {
+            $category = $this->category(['unrestricted_dates' => true, 'minimum_notice_days' => 15, 'is_absence' => $absence, 'maximum_past_days' => 7]);
+            $category->update(['unrestricted_dates' => false]);
+            $this->postJson('/api/requests', $this->payload($category, ['start_date' => today()->subDays(30)->toDateString(),
+                'end_date' => today()->subDays(29)->toDateString(), 'unrestricted_dates' => true]))
+                ->assertUnprocessable()->assertJsonValidationErrors('start_date');
+            $this->putJson("/api/hr/categories/{$category->id}", ['unrestricted_dates' => true])->assertForbidden();
+        }
+        $normal = $this->category(['minimum_notice_days' => 15]);
+        $this->postJson('/api/requests', $this->payload($normal))->assertUnprocessable()->assertJsonValidationErrors('start_date');
+        $absence = $this->category(['is_absence' => true, 'maximum_past_days' => 7]);
+        $this->postJson('/api/requests', $this->payload($absence, ['start_date' => today()->subDays(7)->toDateString(), 'end_date' => today()->toDateString()]))->assertCreated();
+    }
+
+    public function test_unrestricted_dates_keep_area_capacity_and_inactive_category_rules(): void
+    {
+        $user = $this->worker();
+        $other = $this->worker('other@test.com');
+        $user->worker->area->update(['max_simultaneous_permissions' => 1]);
+        $category = $this->category(['unrestricted_dates' => true]);
+        $date = today()->subMonths(2)->toDateString();
+        LaborRequest::create(['worker_id' => $other->worker->id, 'category_id' => $category->id, 'start_date' => $date, 'end_date' => $date,
+            'reason' => 'Cupo ocupado', 'status' => RequestStatus::APPROVED, 'requested_at' => now()]);
+        Sanctum::actingAs($user);
+        $this->postJson('/api/requests', $this->payload($category, ['start_date' => $date, 'end_date' => $date]))
+            ->assertUnprocessable()->assertJsonValidationErrors('start_date');
+        $category->update(['active' => false]);
+        $this->postJson('/api/requests', $this->payload($category))->assertUnprocessable()->assertJsonValidationErrors('category_id');
+    }
+
     public function test_metadata_from_older_frontend_versions_remains_supported(): void
     {
         $user = $this->worker();
