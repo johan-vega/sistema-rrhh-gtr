@@ -133,12 +133,18 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
             <div class="form-row">
               <div class="form-group">
                 <label for="new-password">Nueva contraseña (opcional)</label>
-                <input id="new-password" type="password" [(ngModel)]="payload.password" name="password" minlength="6" autocomplete="new-password" aria-describedby="new-password-help" class="input-control" />
+                <div class="password-control">
+                  <input id="new-password" [type]="showNewPassword ? 'text' : 'password'" [(ngModel)]="payload.password" name="password" minlength="6" autocomplete="new-password" aria-describedby="new-password-help" class="input-control" />
+                  <button type="button" class="password-toggle" aria-controls="new-password" [attr.aria-label]="showNewPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'" [attr.aria-pressed]="showNewPassword" (click)="showNewPassword = !showNewPassword">{{ showNewPassword ? 'Ocultar' : 'Mostrar' }}</button>
+                </div>
                 <small id="new-password-help">Déjala vacía para conservar la actual. Mínimo 6 caracteres; puede contener solo números. Al cambiarla se cerrarán las sesiones del trabajador.</small>
               </div>
               <div class="form-group">
                 <label for="password-confirmation">Confirmar nueva contraseña</label>
-                <input id="password-confirmation" type="password" [(ngModel)]="passwordConfirmation" name="password_confirmation" [required]="!!payload.password" autocomplete="new-password" class="input-control" />
+                <div class="password-control">
+                  <input id="password-confirmation" [type]="showPasswordConfirmation ? 'text' : 'password'" [(ngModel)]="passwordConfirmation" name="password_confirmation" [required]="!!payload.password" autocomplete="new-password" class="input-control" />
+                  <button type="button" class="password-toggle" aria-controls="password-confirmation" [attr.aria-label]="showPasswordConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'" [attr.aria-pressed]="showPasswordConfirmation" (click)="showPasswordConfirmation = !showPasswordConfirmation">{{ showPasswordConfirmation ? 'Ocultar' : 'Mostrar' }}</button>
+                </div>
               </div>
             </div>
           }
@@ -154,6 +160,14 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
     </div>
   `,
   styles: [`
+    .password-control { display: flex; align-items: stretch; gap: 0.4rem; min-width: 0; }
+    .password-control .input-control { flex: 1; width: 0; }
+    .password-toggle {
+      flex-shrink: 0; min-height: 44px; padding: 0.5rem; border-radius: 10px;
+      border: 1px solid #cbd5e1; background: #f1f5f9; color: var(--color-primary);
+      font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      &:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    }
     .photo-preview { width:96px; height:96px; border-radius:50%; background:var(--color-primary); color:white; }
     .form-container {
       padding: 1.5rem;
@@ -238,6 +252,8 @@ export class HrWorkerFormComponent implements OnInit, OnDestroy {
 
   error = '';
   passwordConfirmation = '';
+  showNewPassword = false;
+  showPasswordConfirmation = false;
   hasPhoto = false;
   photoPreview: string | null = null;
   private originalArea?: number;
