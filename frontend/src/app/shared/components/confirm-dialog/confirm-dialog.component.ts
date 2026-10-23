@@ -17,14 +17,15 @@ import { FormsModule } from '@angular/forms';
           @if (inputLabel()) {
             <div class="form-group" style="margin-top: 1rem;">
               <label class="form-label">
-                {{ inputLabel() }} <span class="required">*</span>
-              </label>
+                {{ inputLabel() }} @if (inputRequired()) { <span class="required">*</span> }
               <textarea
                 class="form-control"
                 [placeholder]="inputPlaceholder()"
                 [(ngModel)]="inputValue"
+                [attr.maxlength]="inputMaxLength()"
                 rows="3"
               ></textarea>
+              </label>
             </div>
           }
         </div>
@@ -37,7 +38,7 @@ import { FormsModule } from '@angular/forms';
             [class]="confirmClass()"
             type="button"
             (click)="onConfirm()"
-            [disabled]="!!inputLabel() && !inputValue.trim()"
+            [disabled]="invalidInput"
           >
             {{ confirmLabel() }}
           </button>
@@ -54,13 +55,21 @@ export class ConfirmDialogComponent {
   confirmClass  = input<string>('btn-danger');
   inputLabel    = input<string>('');
   inputPlaceholder = input<string>('Escribe aquí...');
+  inputRequired = input<boolean>(true);
+  inputMaxLength = input<number | null>(null);
 
   confirmed = output<string | undefined>();
   dismissed = output<void>();
 
   inputValue = '';
 
+  get invalidInput(): boolean {
+    return !!this.inputLabel() && ((this.inputRequired() && !this.inputValue.trim())
+      || (this.inputMaxLength() !== null && this.inputValue.length > this.inputMaxLength()!));
+  }
+
   onConfirm(): void {
+    if (this.invalidInput) return;
     this.confirmed.emit(this.inputValue || undefined);
   }
 
