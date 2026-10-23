@@ -68,6 +68,10 @@
           <span class="label">Motivo de rechazo:</span>
           <p class="reason-box rejection-box">{{ request()!.rrhh_observation }}</p>
         </div>
+        <div class="info-item full" *ngIf="request()!.status === 'APPROVED' && request()!.rrhh_observation">
+          <span class="label">Comentario de aprobación:</span>
+          <p class="reason-box">{{ request()!.rrhh_observation }}</p>
+        </div>
       </div>
     </div>
 
@@ -148,6 +152,7 @@
       <button type="button" class="btn btn-danger" [disabled]="processing()" (click)="showDelete.set(true)">Eliminar solicitud</button>
     </div>
     @if (deleteError()) { <p role="alert" class="doc-error">{{ deleteError() }}</p> }
+    @if (approvalError()) { <p role="alert" class="doc-error">{{ approvalError() }}</p> }
   </div>
 
   @if (showDelete()) {
@@ -157,8 +162,10 @@
   }
 
   <app-confirm-dialog *ngIf="showApprove()" title="Aprobar Solicitud"
-    message="¿Confirmas la aprobación de esta solicitud?" confirmLabel="Aprobar" confirmClass="btn-success"
-    (confirmed)="doApprove()" (dismissed)="dismissDialogs()"></app-confirm-dialog>
+    message="¿Confirmas la aprobación de esta solicitud? El comentario será visible para el trabajador."
+    inputLabel="Comentario de aprobación (opcional)" inputPlaceholder="Escribe un comentario (máximo 2000 caracteres)..."
+    [inputRequired]="false" [inputMaxLength]="2000" confirmLabel="Aprobar" confirmClass="btn-success"
+    (confirmed)="doApprove($event)" (dismissed)="dismissDialogs()"></app-confirm-dialog>
 
   <app-confirm-dialog *ngIf="showReject()" title="Rechazar Solicitud"
     message="Ingresa el motivo del rechazo para notificar al trabajador." inputLabel="Motivo de rechazo"

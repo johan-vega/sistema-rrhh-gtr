@@ -97,13 +97,14 @@ export class HrRequestService {
     return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/${id}`);
   }
 
-  approve(id: number): Observable<ApiResponse<LeaveRequest>> {
+  approve(id: number, observation = ''): Observable<ApiResponse<LeaveRequest>> {
     if (environment.useMocks) {
       const req = MOCK_HR_REQUESTS.find(r => r.id === id) ?? MOCK_HR_REQUESTS[0];
       req.status = 'APPROVED'; req.response_date = new Date().toISOString().split('T')[0];
+      req.rrhh_observation = observation;
       return of({ success: true, message: 'Solicitud aprobada correctamente', data: req });
     }
-    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/approve`, {}).pipe(map(res => mapResponse(res, mapRequest)));
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/approve`, { observation }).pipe(map(res => mapResponse(res, mapRequest)));
   }
 
   reject(id: number, payload: RejectRequestPayload): Observable<ApiResponse<LeaveRequest>> {

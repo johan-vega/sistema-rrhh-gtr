@@ -44,6 +44,63 @@ describe('Detalle RRHH: disponibilidad informativa', () => {
     return fixture;
   }
 
+  it.each(['', 'Coordinar entrega de pendientes.'])('aprueba con comentario opcional (%s) y lo muestra al recibir la respuesta', async comment => {
+    const result = new Subject<ApiResponse<LeaveRequest>>();
+    service.approve.mockReturnValue(result);
+    const fixture = render();
+    fixture.nativeElement.querySelector('.btn-approve').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea.maxLength).toBe(2000);
+    textarea.value = comment;
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('.modal-footer .btn-success') as HTMLButtonElement;
+    expect(button.disabled).toBe(false);
+    button.click();
+    fixture.detectChanges();
+    expect(service.approve).toHaveBeenCalledWith(7, comment);
+    fixture.componentInstance.doApprove(comment);
+    expect(service.approve).toHaveBeenCalledTimes(1);
+    result.next(response({ ...request, status: 'APPROVED', rrhh_observation: comment }));
+    result.complete();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.processing()).toBe(false);
+    if (comment) {
+      expect(fixture.nativeElement.textContent).toContain('Comentario de aprobación:');
+      expect(fixture.nativeElement.textContent).toContain(comment);
+    }
+  });
+
+  it('cancelar no aprueba y rechazar sigue exigiendo motivo', async () => {
+    const fixture = render();
+    fixture.nativeElement.querySelector('.btn-approve').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.nativeElement.querySelector('.modal-footer .btn-secondary').click();
+    fixture.detectChanges();
+    expect(service.approve).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    fixture.nativeElement.querySelector('.btn-reject').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('.modal-footer .btn-danger').disabled).toBe(true);
+    expect(service.reject).not.toHaveBeenCalled();
+  });
+
+  it('rechaza comentarios demasiado largos y muestra errores de aprobación', () => {
+    const fixture = render();
+    fixture.componentInstance.doApprove('a'.repeat(2001));
+    expect(service.approve).not.toHaveBeenCalled();
+    service.approve.mockReturnValue(throwError(() => ({ error: { message: 'El área alcanzó el límite de permisos.' } })));
+    fixture.componentInstance.doApprove('Aprobado');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.request()?.status).toBe('PENDING');
+    expect(fixture.nativeElement.textContent).toContain('El área alcanzó el límite de permisos.');
+    expect(fixture.componentInstance.processing()).toBe(false);
+  });
+
   it('carga al abrir, resalta fechas y no aprueba ni rechaza automáticamente', () => {
     const fixture = render();
     const element: HTMLElement = fixture.nativeElement;

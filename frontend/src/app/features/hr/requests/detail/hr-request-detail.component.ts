@@ -29,6 +29,7 @@ export class HrRequestDetailComponent implements OnInit, OnDestroy {
   showReject = signal(false);
   showDelete = signal(false);
   deleteError = signal('');
+  approvalError = signal('');
   observation = '';
   documentError = signal('');
   availability = signal<AreaAvailabilitySummary | null>(null);
@@ -162,12 +163,22 @@ export class HrRequestDetailComponent implements OnInit, OnDestroy {
   confirmReject(): void { this.showReject.set(true); }
   dismissDialogs(): void { this.showApprove.set(false); this.showReject.set(false); }
 
-  doApprove(): void {
+  doApprove(observation?: string): void {
+    if (this.processing() || !this.isActionable || (observation?.length ?? 0) > 2000) return;
     this.dismissDialogs();
     this.processing.set(true);
-    this.svc.approve(this.request()!.id).subscribe({
-      next: res => { this.request.set(res.data); this.processing.set(false); },
-      error: () => this.processing.set(false),
+    this.approvalError.set('');
+    this.svc.approve(this.request()!.id, observation?.trim() ?? '').subscribe({
+      next: res => {
+        this.processing.set(false);
+        if (res.success) this.request.set(res.data);
+        else this.approvalError.set(res.message);
+      },
+      error: err => {
+        this.processing.set(false);
+        this.approvalError.set((Object.values(err?.error?.errors ?? {}).flat()[0] as string)
+          || err?.error?.message || 'No se pudo aprobar la solicitud. Vuelve a intentarlo.');
+      },
     });
   }
 

@@ -379,6 +379,43 @@ class LaborRequestApiTest extends TestCase
         $this->assertDatabaseHas('labor_requests', ['id' => $request->id, 'status' => 'APROBADA']);
     }
 
+    public function test_approval_comment_is_saved_in_history_and_visible_to_owner(): void
+    {
+        $worker = $this->worker();
+        $other = $this->worker('other-approval@test.com');
+        [$role] = $this->roles();
+        $hr = User::factory()->create(['role_id' => $role->id]);
+        $request = LaborRequest::create(['worker_id' => $worker->worker->id, 'category_id' => $this->category()->id,
+            'start_date' => today(), 'end_date' => today(), 'reason' => 'Prueba', 'status' => RequestStatus::PENDING, 'requested_at' => now()]);
+        Sanctum::actingAs($hr);
+        $comment = "Aprobado.\nCoordinar la entrega de pendientes.";
+        $this->postJson("/api/hr/requests/{$request->id}/approve", ['observation' => $comment])->assertOk()
+            ->assertJsonPath('data.status', 'APROBADA')->assertJsonPath('data.hr_observation', $comment);
+        $this->assertDatabaseHas('request_histories', ['labor_request_id' => $request->id, 'action' => 'APROBADA', 'comment' => $comment, 'user_id' => $hr->id]);
+        $this->getJson("/api/hr/requests/{$request->id}")->assertOk()->assertJsonPath('data.hr_observation', $comment);
+        Sanctum::actingAs($worker);
+        $this->getJson("/api/requests/{$request->id}")->assertOk()->assertJsonPath('data.hr_observation', $comment);
+        Sanctum::actingAs($other);
+        $this->getJson("/api/requests/{$request->id}")->assertForbidden();
+    }
+
+    public function test_approval_comment_remains_optional_and_has_a_2000_character_limit(): void
+    {
+        $worker = $this->worker();
+        [$role] = $this->roles();
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        foreach ([[], ['observation' => ''], ['observation' => null], ['observation' => str_repeat('a', 2000)]] as $payload) {
+            $request = LaborRequest::create(['worker_id' => $worker->worker->id, 'category_id' => $this->category()->id,
+                'start_date' => today(), 'end_date' => today(), 'reason' => 'Prueba', 'status' => RequestStatus::PENDING, 'requested_at' => now()]);
+            foreach ([str_repeat('a', 2001), ['no es texto']] as $invalid) {
+                $this->postJson("/api/hr/requests/{$request->id}/approve", ['observation' => $invalid])
+                    ->assertUnprocessable()->assertJsonValidationErrors('observation');
+                $this->assertSame(RequestStatus::PENDING, $request->fresh()->status);
+            }
+            $this->postJson("/api/hr/requests/{$request->id}/approve", $payload)->assertOk()->assertJsonPath('data.status', 'APROBADA');
+        }
+    }
+
     public function test_calendar_returns_only_own_approved_requests(): void
     {
         $user = $this->worker();
