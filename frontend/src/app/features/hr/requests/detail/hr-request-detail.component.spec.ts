@@ -44,6 +44,19 @@ describe('Detalle RRHH: disponibilidad informativa', () => {
     return fixture;
   }
 
+  it.each([
+    ['2026-10-31T19:35:00.000000Z', '31/10/2026 14:35'],
+    ['2026-11-01T02:10:00.000000Z', '31/10/2026 21:10'],
+    ['2026-10-31T14:35:00-05:00', '31/10/2026 14:35'],
+  ])('muestra la creación %s en hora de Lima', (timestamp, expected) => {
+    service.getById.mockReturnValue(of(response({ ...request, request_date: timestamp })));
+    const fixture = render();
+    expect(fixture.nativeElement.querySelector('.creation-date').textContent).toContain(expected);
+    expect(fixture.nativeElement.querySelector('.creation-date').textContent).toContain('(Lima)');
+    expect(fixture.componentInstance.request()?.start_date).toBe(request.start_date);
+    expect(fixture.componentInstance.request()?.end_date).toBe(request.end_date);
+  });
+
   it.each(['', 'Coordinar entrega de pendientes.'])('aprueba con comentario opcional (%s) y lo muestra al recibir la respuesta', async comment => {
     const result = new Subject<ApiResponse<LeaveRequest>>();
     service.approve.mockReturnValue(result);
