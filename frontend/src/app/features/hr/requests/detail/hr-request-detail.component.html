@@ -51,6 +51,10 @@
           <span class="label">Motivo:</span>
           <p class="reason-box">{{ request()!.reason }}</p>
         </div>
+        <div class="info-item full creation-date">
+          <span class="label">Fecha y hora de creación (Lima):</span>
+          <span class="val">{{ (request()!.request_date | date:'dd/MM/yyyy HH:mm':'-0500') || '—' }}</span>
+        </div>
         <div class="info-item full" *ngIf="request()!.document_url">
           <span class="label">Documento Adjunto:</span>
           <button type="button" (click)="openDocument()" class="doc-link"><svg viewBox="0 0 24 24" fill="none"
