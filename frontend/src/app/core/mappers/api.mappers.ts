@@ -34,6 +34,8 @@ export function mapCategory(category: any): RequestCategory {
     unrestricted_dates: Boolean(category.unrestricted_dates),
     maximum_past_days: category.maximum_past_days ?? 0,
     is_absence: Boolean(category.is_absence),
+    is_vacation: Boolean(category.is_vacation),
+    can_submit: category.can_submit !== false,
     active: Boolean(category.active),
   };
 }
@@ -56,6 +58,7 @@ export function mapWorker(worker: any): Worker {
     birth_date: worker.birth_date ?? null,
     hire_date: worker.hire_date ?? null,
     has_photo: Boolean(worker.has_photo),
+    can_request_vacation: worker.can_request_vacation ?? true,
     monthly_permission_limit: worker.monthly_permission_limit ?? null,
     monthly_absence_limit: worker.monthly_absence_limit ?? null,
     active: Boolean(worker.active),
@@ -86,6 +89,10 @@ export function mapRequest(request: any): LeaveRequest {
     request_date: request.requested_at ?? request.request_date,
     response_date: request.responded_at ?? request.response_date ?? undefined,
     document_url: request.documents?.[0]?.download_url,
+    documents: request.documents?.map((doc: any) => ({
+      id: doc.id, original_name: doc.original_name, download_url: doc.download_url,
+      mime_type: doc.mime_type, size: doc.size,
+    })) ?? [],
     document_name: request.documents?.[0]?.original_name,
     rrhh_observation: request.hr_observation ?? request.rrhh_observation ?? undefined,
     history: request.history?.map(mapHistory),

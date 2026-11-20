@@ -36,6 +36,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components/ui.component
             </div>
             <div class="divider"></div>
             <div class="detail-list">
+              <div class="detail-row"><span class="detail-label">Solicitudes de vacaciones</span><span class="detail-value">{{ user()!.can_request_vacation !== false ? 'Habilitadas' : 'No habilitadas' }}</span></div>
               <div class="detail-row">
                 <span class="detail-label">Nombres</span>
                 <span class="detail-value">{{ user()!.name }}</span>

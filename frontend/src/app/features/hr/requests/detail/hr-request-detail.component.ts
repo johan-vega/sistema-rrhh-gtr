@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HrRequestService } from '../../../../core/services/hr-services';
 import { DocumentService } from '../../../../core/services/document.service';
-import { AreaAvailabilityDate, AreaAvailabilitySummary, LeaveRequest } from '../../../../core/models/index';
+import { AreaAvailabilityDate, AreaAvailabilitySummary, LeaveRequest, RequestDocument } from '../../../../core/models/index';
 import { Subscription } from 'rxjs';
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -192,8 +192,13 @@ export class HrRequestDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  openDocument(): void {
-    const url = this.request()?.document_url;
+  get attachments(): RequestDocument[] {
+    const request = this.request();
+    return request?.documents ?? (request?.document_url ? [{ id: 0, original_name: request.document_name || 'Documento adjunto', download_url: request.document_url }] : []);
+  }
+
+  openDocument(doc?: RequestDocument): void {
+    const url = doc?.download_url ?? this.request()?.document_url;
     if (!url) return;
     const tab = window.open('', '_blank');
     this.documentError.set('');
@@ -204,7 +209,7 @@ export class HrRequestDetailComponent implements OnInit, OnDestroy {
         else {
           const link = document.createElement('a');
           link.href = objectUrl;
-          link.download = this.request()?.document_name || 'documento-adjunto';
+          link.download = doc?.original_name || this.request()?.document_name || 'documento-adjunto';
           link.click();
         }
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
@@ -212,8 +217,8 @@ export class HrRequestDetailComponent implements OnInit, OnDestroy {
       error: () => { tab?.close(); this.documentError.set('No se pudo abrir el documento adjunto. Inténtalo nuevamente.'); },
     });
   }
-  downloadDocument(): void {
-    const url = this.request()?.document_url;
+  downloadDocument(doc?: RequestDocument): void {
+    const url = doc?.download_url ?? this.request()?.document_url;
     if (!url) return;
 
     this.documentError.set('');
@@ -224,7 +229,7 @@ export class HrRequestDetailComponent implements OnInit, OnDestroy {
 
         const link = document.createElement('a');
         link.href = objectUrl;
-        link.download = this.request()?.document_name || 'documento-adjunto';
+        link.download = doc?.original_name || this.request()?.document_name || 'documento-adjunto';
         document.body.appendChild(link);
 
         link.click();

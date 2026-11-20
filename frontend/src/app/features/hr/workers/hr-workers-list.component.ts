@@ -58,6 +58,7 @@ import { Worker } from '../../../core/models/index';
           </div>
 
           <div class="card-details">
+            <div class="detail-item vacation-status"><span class="label">Vacaciones:</span><span class="val">{{ worker.can_request_vacation !== false ? 'Habilitadas' : 'No habilitadas' }}</span></div>
             <div class="detail-item">
               <span class="label">Área:</span>
               <span class="val">{{ worker.area?.name || 'Sin área' }}</span>

@@ -47,6 +47,74 @@ class LaborRequestApiTest extends TestCase
         return array_merge(['category_id' => $category->id, 'start_date' => today()->addDays(3)->toDateString(), 'end_date' => today()->addDays(4)->toDateString(), 'reason' => 'Motivo de prueba'], $extra);
     }
 
+    public function test_three_documents_preserve_names_and_private_access_for_worker_and_hr(): void
+    {
+        config(['filesystems.default' => 's3']);
+        Storage::fake('s3');
+        $owner = $this->worker();
+        Sanctum::actingAs($owner);
+        $files = array_map(fn ($name) => UploadedFile::fake()->create($name, 10, 'application/pdf'), ['uno.pdf', 'dos.pdf', 'tres.pdf']);
+        $data = $this->post('/api/requests', $this->payload($this->category(['requires_document' => true]), ['documents' => $files]), ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonCount(3, 'data.documents')->json('data');
+        $id = $data['id'];
+        foreach ($data['documents'] as $i => $document) {
+            $this->assertSame($files[$i]->getClientOriginalName(), $document['original_name']);
+            $this->get("/api/requests/$id/documents/{$document['id']}")->assertOk()->assertDownload($document['original_name']);
+        }
+        $this->assertCount(3, Storage::disk('s3')->allFiles());
+        Sanctum::actingAs($this->worker('other@test.com'));
+        foreach ($data['documents'] as $document) {
+            $this->getJson("/api/requests/$id/documents/{$document['id']}")->assertForbidden();
+        }
+        [$hr] = $this->roles();
+        Sanctum::actingAs(User::factory()->create(['role_id' => $hr->id]));
+        $this->getJson("/api/hr/requests/$id")->assertOk()->assertJsonCount(3, 'data.documents');
+        foreach ($data['documents'] as $document) {
+            $this->get("/api/hr/requests/$id/documents/{$document['id']}")->assertOk()->assertDownload($document['original_name']);
+        }
+    }
+
+    public function test_document_batch_rejects_four_files_or_any_file_over_ten_mb_without_persisting(): void
+    {
+        Storage::fake(config('filesystems.default'));
+        Sanctum::actingAs($this->worker());
+        $category = $this->category(['requires_document' => true]);
+        $four = array_map(fn ($i) => UploadedFile::fake()->create("$i.pdf", 10, 'application/pdf'), range(1, 4));
+        $this->post('/api/requests', $this->payload($category, ['documents' => $four]), ['Accept' => 'application/json'])
+            ->assertUnprocessable()->assertJsonValidationErrors('documents');
+        $this->post('/api/requests', $this->payload($category, ['documents' => [
+            UploadedFile::fake()->create('ok.pdf', 10, 'application/pdf'),
+            UploadedFile::fake()->create('grande.pdf', 10241, 'application/pdf'),
+        ]]), ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('documents.1');
+        $this->assertDatabaseCount('labor_requests', 0);
+        $this->assertDatabaseCount('request_documents', 0);
+        $this->assertCount(0, Storage::disk(config('filesystems.default'))->allFiles());
+    }
+
+    public function test_vacation_permission_blocks_new_requests_but_preserves_other_categories_and_existing_requests(): void
+    {
+        $user = $this->worker();
+        Sanctum::actingAs($user);
+        $vacation = $this->category(['name' => 'Vacaciones', 'is_vacation' => true]);
+        $id = $this->postJson('/api/requests', $this->payload($vacation))->assertCreated()->json('data.id');
+        $user->worker->update(['can_request_vacation' => false]);
+        // El indicador sigue funcionando aunque RRHH cambie el nombre de la categoría.
+        $vacation->update(['name' => 'Descanso vacacional']);
+        $this->getJson("/api/categories/{$vacation->id}")->assertOk()->assertJsonPath('data.can_submit', false)->assertJsonPath('data.is_vacation', true);
+        $this->postJson('/api/requests', $this->payload($vacation, ['can_request_vacation' => true]))
+            ->assertUnprocessable()->assertJsonValidationErrors('category_id');
+        $this->postJson('/api/requests', $this->payload($this->category()))->assertCreated();
+        $this->getJson("/api/requests/$id")->assertOk();
+        [$hr] = $this->roles();
+        Sanctum::actingAs(User::factory()->create(['role_id' => $hr->id]));
+        $this->postJson("/api/hr/requests/$id/approve", ['observation' => 'Aprobada antes de restringir futuras solicitudes'])
+            ->assertOk()->assertJsonPath('data.status', 'APROBADA');
+        $user->worker->update(['can_request_vacation' => true]);
+        Sanctum::actingAs($user->fresh('worker'));
+        $this->getJson("/api/categories/{$vacation->id}")->assertOk()->assertJsonPath('data.can_submit', true);
+        $this->postJson('/api/requests', $this->payload($vacation))->assertCreated();
+    }
+
     public function test_login_returns_sanctum_token(): void
     {
         [$hr] = $this->roles();

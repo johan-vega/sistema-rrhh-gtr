@@ -25,6 +25,9 @@ class LaborRequestService
             throw ValidationException::withMessages(['category_id' => ['La categoría no existe o está inactiva.']]);
         }
         $start = Carbon::parse($data['start_date'])->startOfDay();
+        if ($category->is_vacation && ! $worker->can_request_vacation) {
+            throw ValidationException::withMessages(['category_id' => ['RRHH no ha habilitado las solicitudes de vacaciones para este trabajador.']]);
+        }
         if (! $category->unrestricted_dates && $category->is_absence) {
             $maximumPastDays = $category->maximum_past_days ?? 0;
             if ($start->lt(today()->subDays($maximumPastDays))) {

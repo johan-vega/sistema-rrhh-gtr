@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RequestService } from '../../../../core/services/request.service';
 import { DocumentService } from '../../../../core/services/document.service';
-import { LeaveRequest } from '../../../../core/models/index';
+import { LeaveRequest, RequestDocument } from '../../../../core/models/index';
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { LoadingSpinnerComponent } from '../../../../shared/components/ui.components';
@@ -58,8 +58,30 @@ export class WorkerRequestDetailComponent implements OnInit {
     });
   }
 
-  openDocument(): void {
-    const url = this.request()?.document_url;
+  get attachments(): RequestDocument[] {
+    const request = this.request();
+    return request?.documents ?? (request?.document_url ? [{ id: 0, original_name: request.document_name || 'Documento adjunto', download_url: request.document_url }] : []);
+  }
+
+  downloadDocument(doc: RequestDocument): void {
+    this.documentError.set('');
+    this.documents.get(doc.download_url).subscribe({
+      next: file => {
+        const objectUrl = URL.createObjectURL(file);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = doc.original_name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      },
+      error: () => this.documentError.set('No se pudo descargar el documento adjunto. Inténtalo nuevamente.'),
+    });
+  }
+
+  openDocument(doc?: RequestDocument): void {
+    const url = doc?.download_url ?? this.request()?.document_url;
     if (!url) return;
     const tab = window.open('', '_blank');
     this.documentError.set('');
@@ -70,7 +92,7 @@ export class WorkerRequestDetailComponent implements OnInit {
         else {
           const link = document.createElement('a');
           link.href = objectUrl;
-          link.download = this.request()?.document_name || 'documento-adjunto';
+          link.download = doc?.original_name || this.request()?.document_name || 'documento-adjunto';
           link.click();
         }
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);

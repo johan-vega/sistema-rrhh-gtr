@@ -30,6 +30,41 @@ class WorkerDetailsTest extends TestCase {
     private function photo(): UploadedFile {
         return UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='));
     }
+    public function test_vacation_permission_defaults_to_enabled_and_hr_can_change_it_with_photo(): void {
+        $data = $this->payload();
+        $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->assertJsonPath('data.can_request_vacation', true)->json('data.id');
+        $this->post("/api/hr/workers/$id", [...$data, '_method' => 'PUT', 'can_request_vacation' => '0', 'photo' => $this->photo()], ['Accept' => 'application/json'])
+            ->assertOk()->assertJsonPath('data.can_request_vacation', false);
+        $this->getJson('/api/hr/workers')->assertOk()->assertJsonPath('data.0.can_request_vacation', false);
+        $this->putJson("/api/hr/workers/$id", $data)->assertOk()->assertJsonPath('data.can_request_vacation', false);
+        $this->putJson("/api/hr/workers/$id", [...$data, 'can_request_vacation' => true])->assertOk()->assertJsonPath('data.can_request_vacation', true);
+        $this->putJson("/api/hr/workers/$id", [...$data, 'can_request_vacation' => 'invalid'])->assertUnprocessable()->assertJsonValidationErrors('can_request_vacation');
+    }
+
+    public function test_migration_marks_existing_vacation_category_and_enables_existing_workers_without_duplicates(): void {
+        $id = $this->postJson('/api/hr/workers', $this->payload())->assertCreated()->json('data.id');
+        $category = \App\Models\RequestCategory::create(['name' => 'Vacaciones', 'requires_document' => false, 'minimum_notice_days' => 0, 'active' => true]);
+        $other = \App\Models\RequestCategory::create(['name' => 'Permiso personal', 'requires_document' => false, 'minimum_notice_days' => 0, 'active' => true]);
+        $migration = require database_path('migrations/2026_11_20_000001_add_worker_vacation_permission.php');
+        $migration->down();
+        $migration->up();
+        $this->assertTrue(Worker::findOrFail($id)->can_request_vacation);
+        $this->assertTrue($category->fresh()->is_vacation);
+        $this->assertFalse($other->fresh()->is_vacation);
+        $this->assertDatabaseCount('request_categories', 2);
+        $this->assertDatabaseCount('workers', 1);
+    }
+
+    public function test_worker_cannot_enable_vacations_from_own_profile(): void {
+        $id = $this->postJson('/api/hr/workers', [...$this->payload(), 'can_request_vacation' => false])
+            ->assertCreated()->assertJsonPath('data.can_request_vacation', false)->json('data.id');
+        $worker = Worker::findOrFail($id);
+        Sanctum::actingAs($worker->user);
+        $this->putJson('/api/profile', ['address' => 'Mi dirección', 'can_request_vacation' => true])->assertOk();
+        $this->assertFalse($worker->fresh()->can_request_vacation);
+        $this->getJson('/api/profile')->assertOk()->assertJsonPath('data.can_request_vacation', false);
+    }
+
     public function test_hr_can_reset_worker_password_with_six_digits_json_and_photo(): void {
         $data = $this->payload();
         $id = $this->postJson('/api/hr/workers', $data)->assertCreated()->json('data.id');

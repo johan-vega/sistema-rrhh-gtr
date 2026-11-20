@@ -96,7 +96,7 @@ export class HrWorkerService {
   private async photoForm(payload: CreateWorkerPayload | UpdateWorkerPayload, creating: boolean): Promise<FormData> {
     const form = new FormData();
     Object.entries(this.toBackendPayload(payload, creating)).forEach(([key, value]) => {
-      if (value !== undefined) form.append(key, value === null ? '' : String(value));
+      if (value !== undefined) form.append(key, value === null ? '' : typeof value === 'boolean' ? (value ? '1' : '0') : String(value));
     });
     if (!creating) form.append('_method', 'PUT');
     const photo = payload.photo!;

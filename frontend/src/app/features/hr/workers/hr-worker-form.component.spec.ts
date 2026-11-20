@@ -45,6 +45,30 @@ describe('Formulario RRHH: fecha de ingreso', () => {
     return fixture;
   }
 
+  it('habilita vacaciones por defecto y permite desmarcarlas al crear', async () => {
+    const fixture = await render();
+    const checkbox = fixture.nativeElement.querySelector('[name=can_request_vacation]') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+    checkbox.click();
+    await fixture.whenStable();
+    const form = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
+    fixture.componentInstance.onSubmit(form);
+    expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ can_request_vacation: false }));
+  });
+
+  it('carga el permiso deshabilitado y permite habilitarlo al editar', async () => {
+    route.snapshot.params = { id: '7' };
+    service.getById.mockReturnValue(of(response(mapWorker({ ...worker, can_request_vacation: false }))));
+    const fixture = await render();
+    const checkbox = fixture.nativeElement.querySelector('[name=can_request_vacation]') as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+    checkbox.click();
+    await fixture.whenStable();
+    const form = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
+    fixture.componentInstance.onSubmit(form);
+    expect(service.update).toHaveBeenCalledWith(7, expect.objectContaining({ can_request_vacation: true }));
+  });
+
   it('permite contraseña opcional al editar, conserva ceros y exige confirmación coincidente', async () => {
     route.snapshot.params = { id: '7' };
     service.getById.mockReturnValue(of(response(mapWorker(worker))));

@@ -2,6 +2,9 @@
   margin-bottom: 1.25rem;
 }
 
+.file-preview { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
+.file-info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
 .back-btn {
   font-size: var(--font-size-sm);
   color: var(--color-accent);

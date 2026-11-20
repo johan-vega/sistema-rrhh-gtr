@@ -26,7 +26,7 @@
         [class.is-invalid]="categoryCtrl.invalid && categoryCtrl.touched">
         <option value="">— Selecciona una categoría —</option>
         @for (cat of categories(); track cat.id) {
-        <option [ngValue]="cat.id">{{ cat.name }}</option>
+        <option [ngValue]="cat.id" [disabled]="cat.can_submit === false">{{ cat.name }}{{ cat.can_submit === false ? ' — No habilitadas por RRHH' : '' }}</option>
         }
       </select>
       @if (categoryCtrl.invalid && categoryCtrl.touched) {
@@ -131,20 +131,22 @@
       </label>
 
       <!-- El selector permanece montado al mostrar la vista previa. -->
-      <input #documentInput id="doc-upload" type="file" hidden [disabled]="loading()"
+      <input #documentInput id="doc-upload" type="file" multiple hidden [disabled]="loading() || selectedFiles().length >= 3"
         accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif"
         (change)="onFileChange($event)" />
-      @if (!selectedFile()) {
+      <p class="form-hint" role="status">{{ selectedFiles().length }} de 3 comprobantes — máximo 10 MB por archivo.</p>
+      @if (selectedFiles().length < 3) {
       <label class="file-upload-zone" for="doc-upload">
         <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
             height="16">
             <path
               d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
           </svg></div>
-        <p class="upload-text">Selecciona un archivo</p>
+        <p class="upload-text">Agregar comprobantes</p>
         <p class="upload-hint">PDF o imagen (JPG, PNG, WEBP, HEIC) — Máx. 10 MB</p>
       </label>
-      } @else {
+      }
+      @for (file of selectedFiles(); track $index; let i = $index) {
       <div class="file-preview">
         <span class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
             height="16">
@@ -154,10 +156,10 @@
             <line x1="16" y1="17" x2="8" y2="17" />
           </svg></span>
         <div class="file-info">
-          <p class="file-name">{{ selectedFile()!.name }}</p>
-          <p class="file-size">{{ formatFileSize(selectedFile()!.size) }}</p>
+          <p class="file-name">{{ file.name }}</p>
+          <p class="file-size">{{ formatFileSize(file.size) }}</p>
         </div>
-        <button type="button" class="btn btn-ghost btn-sm" [disabled]="loading()" (click)="removeFile(documentInput)">✕
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="loading()" [attr.aria-label]="'Quitar ' + file.name" (click)="removeFile(documentInput, i)">✕
           Quitar</button>
       </div>
       }

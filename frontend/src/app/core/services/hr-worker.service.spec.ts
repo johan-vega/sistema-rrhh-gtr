@@ -30,6 +30,16 @@ describe('Trabajadores: cambio de contraseña', () => {
     reset.flush(result);
   });
 
+  it.each([true, false])('serializa el permiso de vacaciones con foto como booleano Laravel: %s', async enabled => {
+    const photo = new File(['foto'], 'foto.png', { type: 'image/png' });
+    Object.defineProperty(photo, 'arrayBuffer', { value: async () => new Uint8Array([1, 2, 3]).buffer });
+    service.update(7, { photo, can_request_vacation: enabled }).subscribe();
+    const request = await vi.waitFor(() => http.expectOne(req => req.url === url));
+    expect(request.request.params.get('ngsw-bypass')).toBe('true');
+    expect(request.request.body.get('can_request_vacation')).toBe(enabled ? '1' : '0');
+    request.flush(result);
+  });
+
   it('también envía contraseña y confirmación al actualizar con foto', async () => {
     const photo = new File(['foto'], 'foto.png', { type: 'image/png' });
     Object.defineProperty(photo, 'arrayBuffer', { value: async () => new Uint8Array([1, 2, 3]).buffer });

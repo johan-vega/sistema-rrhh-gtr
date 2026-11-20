@@ -121,6 +121,12 @@ import { Area, Position, CreateWorkerPayload } from '../../../core/models/index'
             </div>
           </div>
 
+          <div class="form-row">
+            <div class="form-group">
+              <label><input type="checkbox" name="can_request_vacation" [(ngModel)]="payload.can_request_vacation" /> Permitir vacaciones</label>
+              <small>Permite enviar nuevas solicitudes de vacaciones. No modifica solicitudes anteriores.</small>
+            </div>
+          </div>
           @if (!isEdit) {
             <div class="form-row">
               <div class="form-group">
@@ -265,6 +271,7 @@ export class HrWorkerFormComponent implements OnInit, OnDestroy {
   positions: Position[] = [];
 
   payload: CreateWorkerPayload = {
+    can_request_vacation: true,
     name: '',
     last_name: '',
     email: '',
@@ -303,6 +310,7 @@ export class HrWorkerFormComponent implements OnInit, OnDestroy {
         this.originalPosition = w.position?.id;
         this.hasPhoto = !!w.has_photo;
         this.payload = {
+          can_request_vacation: w.can_request_vacation ?? true,
           name: w.name,
           last_name: w.last_name,
           email: w.email,

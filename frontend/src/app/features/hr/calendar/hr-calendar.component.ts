@@ -1,12 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { HrRequestService } from '../../../core/services/hr-services';
 import { CalendarService } from '../../../core/services/calendar.service';
-import { CalendarEvent } from '../../../core/models/index';
+import { CalendarEvent, LeaveRequest } from '../../../core/models/index';
 
 @Component({
   selector: 'app-hr-calendar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="hr-calendar-container">
       <div class="header-section">
@@ -57,11 +60,13 @@ import { CalendarEvent } from '../../../core/models/index';
           <ng-container *ngIf="selectedEvents().length; else noApprovedEvents">
             <ul>
               <li *ngFor="let request of selectedEvents()">
+                <button type="button" class="btn-icon summary-trigger" (click)="openSummary(request)" [attr.aria-label]="'Ver resumen del permiso de ' + request.employee_name">
                 <span class="detail-dot" aria-hidden="true"></span>
                 <div>
                   <strong>{{ request.employee_name }}</strong>
                   <span>{{ request.category }} · {{ request.start_date === request.end_date ? request.start_date : request.start_date + ' al ' + request.end_date }}</span>
                 </div>
+                </button>
               </li>
             </ul>
           </ng-container>
@@ -69,9 +74,35 @@ import { CalendarEvent } from '../../../core/models/index';
         </ng-container>
         <ng-template #chooseDay><p>Selecciona un día con punto verde para ver quiénes tienen descanso aprobado.</p></ng-template>
       </section>
+      <dialog #summaryDialog class="card summary-dialog" aria-labelledby="summary-title" (cancel)="closeSummary()" (click)="onDialogClick($event)">
+        <div>
+          <h3 id="summary-title">Resumen de solicitud #{{ summaryEvent()?.id }}</h3>
+          <p><strong>Trabajador:</strong> {{ summaryRequest()?.employee?.full_name || summaryEvent()?.employee_name }}</p>
+          <p><strong>Motivo / categoría:</strong> {{ summaryRequest()?.category?.name || summaryEvent()?.category }}</p>
+          <p><strong>Periodo:</strong> {{ (summaryEvent()?.start_date | date:'dd/MM/yyyy') }} al {{ (summaryEvent()?.end_date | date:'dd/MM/yyyy') }}</p>
+          @if (summaryLoading()) { <p role="status">Cargando resumen…</p> }
+          @if (summaryError()) {
+            <p role="alert">{{ summaryError() }}</p>
+            <button type="button" class="btn-icon" (click)="loadSummary()">Reintentar</button>
+          }
+          @if (summaryRequest(); as detail) {
+            <h4>Mensaje del trabajador</h4><p>{{ detail.reason || 'Sin mensaje' }}</p>
+            <h4>Mensaje de RRHH</h4><p>{{ detail.rrhh_observation || 'Sin comentario' }}</p>
+          }
+          <div class="summary-actions">
+            @if (summaryEvent(); as event) { <a class="btn-icon" [routerLink]="['/hr/requests', event.id]" (click)="closeSummary()">Ver solicitud completa</a> }
+            <button type="button" class="btn-icon" autofocus (click)="closeSummary()">Cerrar</button>
+          </div>
+        </div>
+      </dialog>
     </div>
   `,
   styles: [`
+    .btn-icon.summary-trigger { display: flex; gap: 0.55rem; width: 100%; text-align: left; overflow-wrap: anywhere; }
+    dialog { width: min(560px, calc(100% - 2rem)); margin: auto; max-height: 85dvh; overflow: auto; padding: 1.25rem; color: inherit; overflow-wrap: anywhere; }
+    dialog::backdrop { background: rgba(15, 23, 42, 0.55); }
+    dialog p { white-space: pre-wrap; margin: 0.5rem 0; }
+    .summary-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
     .hr-calendar-container {
       padding: 1.5rem;
       max-width: 1100px;
@@ -213,8 +244,52 @@ import { CalendarEvent } from '../../../core/models/index';
     }
   `]
 })
-export class HrCalendarComponent implements OnInit {
+export class HrCalendarComponent implements OnInit, OnDestroy {
   private calendarService = inject(CalendarService);
+  private requestService = inject(HrRequestService);
+  @ViewChild('summaryDialog') summaryDialog!: ElementRef<HTMLDialogElement>;
+  summaryEvent = signal<CalendarEvent | null>(null);
+  summaryRequest = signal<LeaveRequest | null>(null);
+  summaryLoading = signal(false);
+  summaryError = signal('');
+  private summarySubscription?: Subscription;
+
+  openSummary(event: CalendarEvent): void {
+    this.summaryEvent.set(event);
+    this.loadSummary();
+    if (!this.summaryDialog.nativeElement.open) this.summaryDialog.nativeElement.showModal();
+  }
+
+  loadSummary(): void {
+    const event = this.summaryEvent();
+    if (!event) return;
+    this.summarySubscription?.unsubscribe();
+    this.summaryRequest.set(null);
+    this.summaryError.set('');
+    this.summaryLoading.set(true);
+    this.summarySubscription = this.requestService.getById(event.id).subscribe({
+      next: res => {
+        this.summaryLoading.set(false);
+        if (res.success) this.summaryRequest.set(res.data);
+        else this.summaryError.set(res.message || 'No se pudo cargar el resumen.');
+      },
+      error: () => { this.summaryLoading.set(false); this.summaryError.set('No se pudo cargar el resumen. La solicitud podría haber sido eliminada o la conexión falló.'); },
+    });
+  }
+
+  closeSummary(): void {
+    this.summarySubscription?.unsubscribe();
+    this.summaryDialog.nativeElement.close();
+    this.summaryEvent.set(null);
+    this.summaryRequest.set(null);
+    this.summaryLoading.set(false);
+  }
+
+  onDialogClick(event: MouseEvent): void {
+    if (event.target === this.summaryDialog.nativeElement) this.closeSummary();
+  }
+
+  ngOnDestroy(): void { this.summarySubscription?.unsubscribe(); }
 
   daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   currentDate = new Date();
