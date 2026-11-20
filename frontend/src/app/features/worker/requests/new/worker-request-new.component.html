@@ -122,7 +122,7 @@
     <!-- Documento -->
     <div class="form-group">
       <label class="form-label">
-        Documento de sustento
+        Comprobantes de sustento
         @if (selectedCategory()?.requires_document) {
         <span class="required">*</span>
         } @else {
@@ -136,15 +136,19 @@
         (change)="onFileChange($event)" />
       <p class="form-hint" role="status">{{ selectedFiles().length }} de 3 comprobantes — máximo 10 MB por archivo.</p>
       @if (selectedFiles().length < 3) {
-      <label class="file-upload-zone" for="doc-upload">
-        <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
+      <button id="btn-agregar-comprobante" type="button" class="btn btn-secondary" [disabled]="loading()"
+        aria-controls="doc-upload" (click)="documentInput.click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
             height="16">
             <path
               d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-          </svg></div>
-        <p class="upload-text">Agregar comprobantes</p>
-        <p class="upload-hint">PDF o imagen (JPG, PNG, WEBP, HEIC) — Máx. 10 MB</p>
-      </label>
+          </svg>
+        {{ selectedFiles().length ? 'Agregar otro comprobante' : 'Seleccionar comprobantes' }}
+      </button>
+      <p class="form-hint">Puedes seleccionar varios archivos juntos o agregarlos uno por uno con este botón.</p>
+      <p class="form-hint">PDF o imagen (JPG, PNG, WEBP, HEIC, HEIF).</p>
+      } @else {
+      <p class="form-hint" role="status">Ya agregaste 3 comprobantes. Para cambiar uno, quítalo de la lista.</p>
       }
       @for (file of selectedFiles(); track $index; let i = $index) {
       <div class="file-preview">
