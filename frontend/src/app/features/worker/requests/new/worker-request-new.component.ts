@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -24,7 +24,8 @@ export class WorkerRequestNewComponent implements OnInit {
   loading          = signal(false);
   success          = signal(false);
   error            = signal('');
-  selectedFile     = signal<File | null>(null);
+  selectedFiles    = signal<File[]>([]);
+  selectedFile     = computed(() => this.selectedFiles()[0] ?? null);
   dateWarning      = signal('');
   today            = this.localDate(new Date());
 
@@ -75,34 +76,42 @@ export class WorkerRequestNewComponent implements OnInit {
   onFileChange(event: Event): void {
     if (this.loading()) return;
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = Array.from(input.files ?? []);
+    if (!files.length) return;
+    if (this.selectedFiles().length + files.length > 3) {
+      this.error.set('Puedes adjuntar como máximo 3 comprobantes. Quita uno antes de agregar otro.');
+      input.value = '';
+      return;
+    }
 
     const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
-    const extension = file.name.split('.').pop()?.toLowerCase();
     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
-    if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(extension ?? '')) {
-      this.error.set('Solo se permiten archivos PDF, JPG, PNG, WEBP o HEIC.');
-      input.value = '';
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      this.error.set('El archivo no debe superar 10 MB.');
-      input.value = '';
-      return;
-    }
-    if (file.size === 0) {
-      this.error.set('El archivo está vacío. Selecciona otro documento.');
-      input.value = '';
-      return;
+    for (const file of files) {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(extension ?? '')) {
+        this.error.set('Solo se permiten archivos PDF, JPG, PNG, WEBP o HEIC.');
+        input.value = '';
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        this.error.set('El archivo no debe superar 10 MB.');
+        input.value = '';
+        return;
+      }
+      if (file.size === 0) {
+        this.error.set('El archivo está vacío. Selecciona otro documento.');
+        input.value = '';
+        return;
+      }
     }
     this.error.set('');
-    this.selectedFile.set(file);
+    this.selectedFiles.update(current => [...current, ...files]);
+    input.value = '';
   }
 
-  removeFile(input: HTMLInputElement): void {
+  removeFile(input: HTMLInputElement, index = 0): void {
     if (this.loading()) return;
-    this.selectedFile.set(null);
+    this.selectedFiles.update(files => files.filter((_, i) => i !== index));
     input.value = '';
   }
 
@@ -127,6 +136,10 @@ export class WorkerRequestNewComponent implements OnInit {
       this.error.set('Selecciona un tipo de solicitud disponible.');
       return;
     }
+    if (cat.can_submit === false) {
+      this.error.set('RRHH no ha habilitado las solicitudes de vacaciones para este trabajador.');
+      return;
+    }
     if (cat?.requires_document && !this.selectedFile()) {
       this.error.set('Esta categoría requiere adjuntar un documento.');
       return;
@@ -139,7 +152,7 @@ export class WorkerRequestNewComponent implements OnInit {
       start_date: raw.start_date!,
       end_date: raw.end_date!,
       reason: raw.reason!,
-      document: this.selectedFile() ?? undefined,
+      ...(this.selectedFiles().length > 1 ? { documents: this.selectedFiles() } : { document: this.selectedFile() ?? undefined }),
     }).subscribe({
       next: (res) => {
         this.loading.set(false);

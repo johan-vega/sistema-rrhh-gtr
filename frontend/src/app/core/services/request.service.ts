@@ -112,8 +112,10 @@ export class RequestService {
     form.append('end_date', payload.end_date);
     form.append('reason', payload.reason);
 
-    if (payload.document) {
-      const document = payload.document;
+    // Compatibilidad con los consumidores que aún envían un solo documento.
+    const documents = payload.documents ?? (payload.document ? [payload.document] : []);
+    if (documents.length > 3) throw new Error('Puedes adjuntar como máximo 3 comprobantes.');
+    for (const document of documents) {
       if (document.size === 0) throw new Error('El archivo está vacío. Selecciona otro documento.');
       if (document.size > 10 * 1024 * 1024) throw new Error('El archivo no debe superar 10 MB.');
 

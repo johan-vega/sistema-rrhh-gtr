@@ -38,6 +38,38 @@ describe('Nueva solicitud: selección y envío del documento', () => {
     fixture.detectChanges();
   });
 
+  it('agrega comprobantes en varias selecciones, elimina uno y envía los tres elegidos', () => {
+    const input = fixture.nativeElement.querySelector('input[type=file]') as HTMLInputElement;
+    const files = ['uno.pdf', 'dos.HEIC', 'tres.webp', 'cuatro.jpg'].map(name => new File(['datos'], name));
+    const select = (batch: File[]) => {
+      Object.defineProperty(input, 'files', { value: batch, configurable: true });
+      input.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    };
+    expect(input.multiple).toBe(true);
+    select(files.slice(0, 2));
+    select([files[2]]);
+    expect(component.selectedFiles()).toEqual(files.slice(0, 3));
+    select([files[3]]);
+    expect(component.error()).toContain('3 comprobantes');
+    expect(component.selectedFiles()).toHaveLength(3);
+    component.removeFile(input, 1);
+    select([files[3]]);
+    component.onSubmit();
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ documents: [files[0], files[2], files[3]] }));
+  });
+
+  it('deshabilita vacaciones no autorizadas y rechaza un valor forzado', () => {
+    const category = { ...component.categories()[0], name: 'Vacaciones', is_vacation: true, can_submit: false };
+    component.categories.set([category]);
+    component.form.controls.category_id.setValue(category.id);
+    fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('#category') as HTMLSelectElement).options[1].disabled).toBe(true);
+    component.onSubmit();
+    expect(create).not.toHaveBeenCalled();
+    expect(component.error()).toContain('RRHH no ha habilitado');
+  });
+
   function normalCategory(): void {
     const category = { ...component.categories()[0], is_absence: false, requires_document: false };
     component.categories.set([category]);

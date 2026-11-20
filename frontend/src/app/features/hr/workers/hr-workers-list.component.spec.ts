@@ -28,6 +28,16 @@ describe('Trabajadores: paginación y búsqueda en servidor', () => {
   });
   afterEach(() => { fixture.destroy(); http.verify(); });
 
+  it('muestra el permiso de vacaciones de cada trabajador sin abrir su edición', async () => {
+    http.expectOne(req => req.url === url).flush({ ...response(1, 2), data: [
+      { ...worker(1), can_request_vacation: true }, { ...worker(2), can_request_vacation: false },
+    ] });
+    await fixture.whenStable();
+    const states = fixture.nativeElement.querySelectorAll('.vacation-status');
+    expect(states[0].textContent).toContain('Habilitadas');
+    expect(states[1].textContent).toContain('No habilitadas');
+  });
+
   it('pide confirmación, permite cancelar y actualiza la última página tras eliminar', async () => {
     http.expectOne(req => req.url === url).flush(response(2, 21));
     await fixture.whenStable();

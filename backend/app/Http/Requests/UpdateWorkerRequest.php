@@ -16,6 +16,7 @@ class UpdateWorkerRequest extends ApiRequest
             'worker_type' => ['required', 'in:OBRERO,EMPLEADO'],
             'birth_date' => ['required', 'date_format:Y-m-d', 'before:today'],
             'hire_date' => ['nullable', 'date_format:Y-m-d'],
+            'can_request_vacation' => ['sometimes', 'boolean'],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480'], 'monthly_permission_limit' => ['nullable', 'integer', 'min:0', 'max:365'], 'monthly_absence_limit' => ['nullable', 'integer', 'min:0', 'max:365']];
     }

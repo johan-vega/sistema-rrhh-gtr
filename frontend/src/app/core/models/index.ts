@@ -4,6 +4,7 @@
 
 export type WorkerType = 'OBRERO' | 'EMPLEADO';
 export interface WorkerPersonalDetails {
+  can_request_vacation?: boolean;
   dni_address?: string | null;
   emergency_phone?: string | null;
   worker_type?: WorkerType | null;
@@ -73,6 +74,8 @@ export interface Position {
 // =====================================================
 
 export interface RequestCategory {
+  is_vacation?: boolean;
+  can_submit?: boolean;
   id: number;
   name: string;
   description?: string;
@@ -91,6 +94,7 @@ export interface RequestCategory {
 export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export interface LeaveRequest {
+  documents?: RequestDocument[];
   id: number;
   employee_id: number;
   employee?: Worker;
@@ -115,12 +119,21 @@ export interface RequestHistoryEntry {
   created_at: string;
 }
 
+export interface RequestDocument {
+  id: number;
+  original_name: string;
+  download_url: string;
+  mime_type?: string;
+  size?: number;
+}
+
 export interface CreateRequestPayload {
   category_id: number;
   start_date: string;
   end_date: string;
   reason: string;
   document?: File;
+  documents?: File[];
 }
 
 export interface RejectRequestPayload {

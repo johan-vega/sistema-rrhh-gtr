@@ -44,6 +44,21 @@ describe('Detalle RRHH: disponibilidad informativa', () => {
     return fixture;
   }
 
+  it('muestra cada comprobante y abre o descarga el documento elegido', () => {
+    const documents = [1, 2, 3].map(id => ({ id, original_name: `sustento-${id}.pdf`, download_url: `/api/hr/requests/7/documents/${id}` }));
+    service.getById.mockReturnValue(of(response({ ...request, documents })));
+    const fixture = render();
+    const open = vi.spyOn(fixture.componentInstance, 'openDocument').mockImplementation(() => {});
+    const download = vi.spyOn(fixture.componentInstance, 'downloadDocument').mockImplementation(() => {});
+    const buttons = fixture.nativeElement.querySelectorAll('.info-item .doc-link') as NodeListOf<HTMLButtonElement>;
+    expect(buttons.length).toBe(6);
+    for (const document of documents) expect(fixture.nativeElement.textContent).toContain(document.original_name);
+    buttons[2].click();
+    buttons[5].click();
+    expect(open).toHaveBeenCalledWith(documents[1]);
+    expect(download).toHaveBeenCalledWith(documents[2]);
+  });
+
   it.each([
     ['2026-10-31T19:35:00.000000Z', '31/10/2026 14:35'],
     ['2026-11-01T02:10:00.000000Z', '31/10/2026 21:10'],

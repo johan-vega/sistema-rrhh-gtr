@@ -78,6 +78,41 @@ describe('RequestService: transporte de solicitudes', () => {
     expect((await result).data.id).toBe(1);
   });
 
+  it('envía los tres comprobantes con sus bytes, nombres y campos originales', async () => {
+    const documents = [new File(['pdf'], 'uno.pdf', { type: 'application/pdf' }),
+      new File(['heic'], 'dos.HEIC', { type: 'image/heic' }), new File(['webp'], 'tres.webp', { type: 'image/webp' })];
+    const result = firstValueFrom(service.create({ ...payload, documents }));
+    const request = await vi.waitFor(() => http.expectOne(url));
+    const form = request.request.body as FormData;
+    expect(form.get('category_id')).toBe('4');
+    expect(form.get('start_date')).toBe(payload.start_date);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer test-token');
+    expect(request.request.headers.has('Content-Type')).toBe(false);
+    const files = form.getAll('documents[]') as File[];
+    expect(files).toHaveLength(3);
+    for (let i = 0; i < files.length; i++) {
+      expect(files[i].name).toBe(documents[i].name);
+      expect(new Uint8Array(await readBytes(files[i]))).toEqual(new Uint8Array(await readBytes(documents[i])));
+    }
+    request.flush({ ...response, data: { ...response.data, documents: documents.map((file, i) => ({
+      id: i + 1, original_name: file.name, download_url: `/api/requests/1/documents/${i + 1}`, size: file.size,
+    })) } });
+    expect((await result).data.documents?.map(file => file.original_name)).toEqual(documents.map(file => file.name));
+  });
+
+  it('rechaza más de tres archivos antes de enviar HTTP', async () => {
+    const documents = Array.from({ length: 4 }, (_, i) => new File(['pdf'], `${i}.pdf`));
+    await expect(firstValueFrom(service.create({ ...payload, documents }))).rejects.toThrow(/3/);
+    http.expectNone(url);
+  });
+
+  it('no envía un lote parcial cuando el segundo archivo excede el límite', async () => {
+    const large = new File(['pdf'], 'grande.pdf');
+    Object.defineProperty(large, 'size', { value: 10 * 1024 * 1024 + 1 });
+    await expect(firstValueFrom(service.create({ ...payload, documents: [new File(['pdf'], 'uno.pdf'), large] }))).rejects.toThrow(/10 MB/);
+    http.expectNone(url);
+  });
+
   it('permite enviar solicitudes sin adjunto sin depender de cambios del backend', async () => {
     const result = firstValueFrom(service.create(payload));
     const request = await vi.waitFor(() => http.expectOne(url));
