@@ -59,6 +59,32 @@ describe('Nueva solicitud: selección y envío del documento', () => {
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ documents: [files[0], files[2], files[3]] }));
   });
 
+  it('mantiene visible el botón para agregar uno por uno y lo recupera al quitar un comprobante', () => {
+    const button = () => fixture.nativeElement.querySelector('#btn-agregar-comprobante') as HTMLButtonElement | null;
+    const input = fixture.nativeElement.querySelector('#doc-upload') as HTMLInputElement;
+    const openPicker = vi.spyOn(input, 'click').mockImplementation(() => {});
+    expect(button()?.textContent).toContain('Seleccionar comprobantes');
+    button()!.click();
+    expect(openPicker).toHaveBeenCalledTimes(1);
+    expect(create).not.toHaveBeenCalled();
+    attach(new File(['primera'], 'primera.jpg', { type: 'image/jpeg' }));
+    expect(button()?.textContent).toContain('Agregar otro comprobante');
+    button()!.click();
+    expect(openPicker).toHaveBeenCalledTimes(2);
+    attach(new File(['segunda'], 'segunda.jpg', { type: 'image/jpeg' }));
+    expect(button()).not.toBeNull();
+    attach(new File(['tercera'], 'tercera.jpg', { type: 'image/jpeg' }));
+    expect(component.selectedFiles()).toHaveLength(3);
+    expect(button()).toBeNull();
+    component.removeFile(input, 1);
+    fixture.detectChanges();
+    expect(button()?.textContent).toContain('Agregar otro comprobante');
+    component.loading.set(true);
+    fixture.detectChanges();
+    expect(button()?.disabled).toBe(true);
+    openPicker.mockRestore();
+  });
+
   it('deshabilita vacaciones no autorizadas y rechaza un valor forzado', () => {
     const category = { ...component.categories()[0], name: 'Vacaciones', is_vacation: true, can_submit: false };
     component.categories.set([category]);
