@@ -1,4 +1,15 @@
-FROM composer:2 AS dependencies
+# Compartir PHP y extensiones entre la instalación y la ejecución del backend.
+FROM php:8.2-cli-bookworm AS php-base
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libzip-dev unzip \
+    && docker-php-ext-install pdo_mysql zip \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM php-base AS dependencies
+
+# Copiar solo Composer: su imagen puede incorporar otra versión de PHP.
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 WORKDIR /app
 
@@ -11,14 +22,9 @@ RUN composer install \
     --optimize-autoloader \
     --no-scripts
 
-FROM php:8.2-cli-bookworm
+FROM php-base AS runtime
 
 WORKDIR /var/www/html
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libzip-dev unzip \
-    && docker-php-ext-install pdo_mysql zip \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY . ./
 COPY --from=dependencies /app/vendor ./vendor
